@@ -1,3 +1,26 @@
+/* This file is part of mpusim.
+ *
+ * mpusim is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * mpusim is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with mpusim.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * @file        accumulator_array.h
+ * @author      Kevin Stehle (stehle@stud.uni-heidelberg.de)
+ * @date        2019-2020
+ * @copyright   GNU Public License version 3 (GPLv3)
+ */
+
 #ifndef ACCUMULATOR_ARRAY_H
 #define ACCUMULATOR_ARRAY_H
 
@@ -24,6 +47,42 @@ enum class SystolicArrayStartupMode
     WeightsNotPreloaded
 };
 
+/**
+ * @class                       AccumulatorArray
+ * @brief                       Class template emulating the accumulator array of the MPU
+ * @details                     Class template emulating the accumulator array of the MPU.
+ *                              This functional unit is used to accumulate the partial sums
+ *                              produced by the systolic array. The partial sums are
+ *                              stored in dedicated memory, the size of which is defined
+ *                              by the width of the systolic array systolicArrayWidth and
+ *                              the height of the accumulator array accumulatorArrayHeight.
+ *                              The total accumulator array memory size is given by
+ *                              systolicArrayWidth*accumulatorArrayHeight*sizeof(AccumulatorDatatype).
+ *                              The accumulator array uses double buffering, and produces
+ *                              output matrix tiles with a maximum height of accumulatorArrayHeight/2
+ *                              and a width of systolicArrayWidth. These tiles are stored in
+ *                              the memory segment in row major order. When a tile is finished,
+ *                              the accumulator array sets the data ready, represented by the
+ *                              members dataReadyCurrent and dataReadyNext, to high, which signals
+ *                              the MCU that a tile can be read from accumulator array memory.
+ *                              This is currently done using the readDiagonal method, to ensure
+ *                              that tiles of all heights, down to a height of 1, can be retrieved
+ *                              from memory without stalling the systolic array.
+ *                              The module has two startup modes: In WeightsPreloaded mode, the
+ *                              first weight tile is assumed to already be stored into the
+ *                              PE weight registers before the start of the active systolic array
+ *                              and accumulator array operation. In WeightsNotPreloaded mode, the
+ *                              first wave of updates is expected to occur during active systolic array
+ *                              and accumulator array operation. The two operation modes have to be
+ *                              accounted for, as they require different partial sum addressing behavior.
+ *                              This is because the order of update weight and valid signals arriving
+ *                              at the accumulator array differs between them.
+ * @todo                        Remove no longer required WeightsPreloaded operation mode
+ * @tparam WeightDatatype       The weight datatype used by the MPU
+ * @tparam ActivationDatatype   The activation datatype used by the MPU
+ * @tparam AccumulatorDatatype  The accumulator datatype used by the MPU
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename AccumulatorDatatype> class AccumulatorArray
@@ -31,6 +90,19 @@ template<typename WeightDatatype,
 
 public:
 
+    /**
+     * @brief                           AccumulatorArray constructor. Allocates memory representing
+     *                                  the accumulator array memory segment and control registers.
+     * @tparam WeightDatatype           The weight datatype used by the MPU
+     * @tparam ActivationDatatype       The activation datatype used by the MPU
+     * @tparam AccumulatorDatatype      The accumulator datatype used by the MPU
+     * @param pePtrVector               A pointer to a std::vector of std::unique_ptr objects pointing
+     *                                  to ProcessingElement subclass objects representing the PEs
+     *                                  at the lower edge of the systolic array
+     * @param systolicArrayWidth        The width of the systolic array
+     * @param accumulatorArrayHeight    The desired height of the accumulator array
+     */
+    
     AccumulatorArray(std::vector<std::unique_ptr<
                         ProcessingElement<WeightDatatype,
                                             ActivationDatatype,
@@ -138,6 +210,19 @@ public:
         std::copy(readAddress, readAddress + width, dest);
     }
 
+    /**
+     * @brief
+     * @param dest
+     * @param destMatrixWidth
+     * @param bufferSelectBit
+     * @param accumulatorArrayBufferDiagonal
+     * @param blockHeight
+     * @param blockWidth
+     * @param loadCount
+     * @param columnStart
+     * @param columnEnd
+     */
+    
     void readDiagonal(AccumulatorDatatype* dest,
                             const size_t destMatrixWidth,
                             const bool bufferSelectBit,
