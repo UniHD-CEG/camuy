@@ -34,6 +34,11 @@
 #include <cstdio>
 #include <cmath>
 
+/**
+ * @struct  PEPosition
+ * @brief   
+ */
+
 struct PEPosition
 {
     PEPosition(size_t x, size_t y): x{x},
@@ -45,12 +50,25 @@ struct PEPosition
     size_t y;
 };
 
+/**
+ * @class ProcessingElement
+ * @brief
+ * @tparam WeightDatatype
+ * @tparam ActivationDatatype
+ * @tparam SumDatatype
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename SumDatatype> class ProcessingElement
 {
 
 public:
+    
+    /**
+     * @brief
+     * @param position
+     */
 
     ProcessingElement(const PEPosition position): m_position{position}
     {
@@ -74,8 +92,6 @@ public:
         m_weightRegisterWritePtrNext =
                             m_weightRegisterReadPtrCurrent;
 
-//        std::cout << "PE (" << m_position.x << ", "
-//                    << m_position.y << ") switched weight" << std::endl;
     }
 
     SumDatatype getSum() const
@@ -103,12 +119,27 @@ public:
         return m_updateWeightCurrent;
     }
 
+    /**
+     * @brief
+     */
+    
     virtual void readUpdateWeightSignals() = 0;
+    
+    /**
+     * @brief
+     * @param intraPeDataMovements
+     * @param interPeDataMovements
+     * @param weightZeroCount
+     */
 
     virtual void computeSum(size_t& intraPeDataMovements,
                                 size_t& interPeDataMovements,
                                 size_t& weightZeroCount) = 0;
 
+    /**
+     * @brief
+     */                            
+    
     virtual void updateState()
     {
         if(m_updateWeightNext)

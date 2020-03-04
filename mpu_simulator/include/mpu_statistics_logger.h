@@ -36,10 +36,23 @@
 #include "matrix_processing_unit.h"
 #include "mpu_statistics_log_entry.h"
 
+/**
+ * @class MpuStatisticsLogger
+ * @brief
+ */
+
 class MpuStatisticsLogger
 {
 
 public:
+    
+    /**
+     * @brief
+     * @param outputFilenameString
+     * @param weightDatatypeSizeByte
+     * @param activationDatatypeSizeByte
+     * @param accumulatorDatatypeSizeByte
+     */
 
     MpuStatisticsLogger(const std::string& outputFilenameString,
                                 const size_t weightDatatypeSizeByte,

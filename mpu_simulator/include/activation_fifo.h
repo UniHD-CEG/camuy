@@ -34,6 +34,22 @@
 #include <cstdint>
 #include <cassert>
 
+/**
+ * @class           ActivationFifo
+ * @brief           The activation FIFOs are used to buffer
+ *                  activation data between the SDSU and the
+ *                  systolic array. They are implemented as
+ *                  a ring buffer. Data memory is emulated
+ *                  using a std::vector of the respective
+ *                  datatype. Attempting to push to a full
+ *                  FIFO does not result in an error, the
+ *                  push operation is simply ignored in
+ *                  that case. Popping from an empty FIFO
+ *                  causes an assertion failure in debug
+ *                  builds.
+ * @tparam DataType The datatype of the stored activations
+ */
+
 template<typename DataType> class ActivationFifo
 {
 
@@ -73,6 +89,10 @@ public:
     {
         return m_contentSize;
     }
+    
+    /**
+     * @deprecated
+     */
 
     void setContent(const std::vector<DataType>& vector)
     {

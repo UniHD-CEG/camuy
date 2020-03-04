@@ -33,10 +33,49 @@
 #include <sstream>
 #include <cstddef>
 
+/**
+ * @class MpuStatisticsLogEntry
+ * @brief
+ */
+
 class MpuStatisticsLogEntry
 {
 
 public:
+    
+    /**
+     * @brief
+     * @param operationNameString
+     * @param sizeM
+     * @param sizeN
+     * @param sizeK
+     * @param systolicArrayHeight
+     * @param systolicArrayWidth
+     * @param fifoDepth
+     * @param accumulatorArrayHeight
+     * @param mpuControlRegisterBits
+     * @param systolicDataSetupUnitControlRegisterBits
+     * @param activationFifoControlRegisterBits
+     * @param weightFetcherControlRegisterBits
+     * @param systolicArrayControlRegisterBits
+     * @param accumulatorArrayControlRegisterBits
+     * @param activationFifoDataRegisterBits
+     * @param systolicArrayDataRegisterBits
+     * @param accumulatorArrayDataRegisterBits
+     * @param unifiedBufferBits
+     * @param intraPeDataMovementsTotal
+     * @param interPeDataMovementsTotal
+     * @param systolicDataSetupUnitLoadCountTotal
+     * @param weightFetcherLoadCountTotal
+     * @param weightFetcherConcurrentLoadsMax
+     * @param weightFetcherConcurrentLoadsPerColumnMax
+     * @param accumulatorArrayLoadCountTotal
+     * @param accumulatorArrayConcurrentLoadsMax
+     * @param accumulatorArrayConcurrentLoadsPerColumnMax
+     * @param iterationsTotal
+     * @param iterationsStalled
+     * @param multiplicationsWithWeightZeroCountTotal
+     */
 
     MpuStatisticsLogEntry(const std::string& operationNameString,
                             const size_t sizeM,

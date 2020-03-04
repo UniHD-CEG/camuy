@@ -33,6 +33,14 @@
 
 #include "processing_element.h"
 
+/**
+ * @class                       ProcessingElementCenter
+ * @brief                       
+ * @tparam WeightDatatype       
+ * @tparam ActivationDatatype   
+ * @tparam SumDatatype          
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename SumDatatype> class ProcessingElementCenter: public ProcessingElement<WeightDatatype,
@@ -42,6 +50,13 @@ template<typename WeightDatatype,
 
 public:
 
+    /**
+     * @brief
+     * @param position
+     * @param neighborLeftPtr
+     * @param neighborUpperPtr
+     */
+    
     ProcessingElementCenter(const PEPosition position,
                             const ProcessingElement<WeightDatatype,
                                                     ActivationDatatype,
@@ -66,6 +81,14 @@ public:
                                                         m_neighborUpperPtr->hasUpdateWeightSignal();
     }
 
+    
+    /**
+     * @brief                       
+     * @param intraPeDataMovements  
+     * @param interPeDataMovements  
+     * @param weightZeroCount       
+     */
+    
     void computeSum(size_t& intraPeDataMovements,
                         size_t& interPeDataMovements,
                         size_t& weightZeroCount) final

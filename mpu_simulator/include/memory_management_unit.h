@@ -55,9 +55,21 @@ namespace mpusim
 using byte = unsigned char;
 }
 
+/**
+ * @struct  WeightMatrixDopeVector
+ * @brief   
+ */
+
 struct WeightMatrixDopeVector
 {
 
+    /**
+     * @brief
+     * @param address
+     * @param rows
+     * @param columns
+     */
+    
     WeightMatrixDopeVector(const size_t address,
                                 const size_t rows,
                                 const size_t columns): address{address},
@@ -72,10 +84,25 @@ struct WeightMatrixDopeVector
     const size_t columns;
 };
 
+
+/**
+ * @class                       MemoryManagementUnit
+ * @tparam WeightDatatype       
+ * @tparam ActivationDatatype   
+ * @tparam ResultDatatype       
+ */
+
 template<typename WeightDatatype, typename ActivationDatatype, typename ResultDatatype> class MemoryManagementUnit
 {
 
 public:
+    
+    /**
+     * @brief
+     * @param unifiedBufferPtr
+     * @param unifiedBufferSizeByteMax
+     * @param unifiedBufferDynamicResize
+     */
 
     MemoryManagementUnit(std::vector<mpusim::byte>* const unifiedBufferPtr,
                                             const size_t unifiedBufferSizeByteMax,

@@ -45,12 +45,28 @@
 
 //#define SYSTOLIC_ARRAY_DEBUG SYSTOLIC_ARRAY_DEBUG
 
+/**
+ * @class                       SystolicArray
+ * @brief                       
+ * @tparam WeightDatatype       
+ * @tparam ActivationDatatype   
+ * @tparam SumDatatype          
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename SumDatatype> class SystolicArray
 {
 
 public:
+    
+    
+    /**
+     * @brief
+     * @param width
+     * @param height
+     * @param activationFifoDepth
+     */
 
     SystolicArray(const size_t width,
                     const size_t height,
@@ -252,6 +268,11 @@ public:
     {
         m_iterationCount = 0;
     }
+    
+    /**
+     * @brief               
+     * @param updateWeights 
+     */
 
     void setUpdateWeightsSignal(const bool updateWeights)
     {
@@ -261,6 +282,10 @@ public:
                                                         m_pePtrArray.at(0).at(0).get())->setUpdateWeightSignal(updateWeights);
     }
 
+    /**
+     * @deprecated
+     */
+    
     void updateAllWeights()
     {
         for(size_t rowCount{0}; rowCount < m_height; ++rowCount)
@@ -272,6 +297,10 @@ public:
         }
     }
 
+    /**
+     * @brief
+     */
+    
     void readUpdateWeightSignals()
     {
         for(std::vector<std::unique_ptr<ProcessingElement<WeightDatatype,
@@ -287,6 +316,10 @@ public:
         }
     }
 
+    /**
+     * @brief
+     */
+    
     void runIteration()
     {
         if(m_iterationCount < m_height)
@@ -361,6 +394,10 @@ public:
                                                                                                 iterator>::value_type{});
     }
 
+    /**
+     * @brief
+     */
+    
     void updateState()
     {
         for(std::vector<std::unique_ptr<ProcessingElement<WeightDatatype,

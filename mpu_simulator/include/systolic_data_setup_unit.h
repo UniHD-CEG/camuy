@@ -43,12 +43,22 @@ constexpr bool matrix0{false};
 constexpr bool matrix1{true};
 }
 
+/**
+ * @class           SystolicDataSetupUnit
+ * @brief           
+ * @tparam Datatype 
+ */
 
 template<typename Datatype> class SystolicDataSetupUnit
 {
 
 public:
 
+    /**
+     * @brief                           
+     * @param activationFifoArrayPtr    
+     */
+    
     SystolicDataSetupUnit(std::vector<ActivationFifo<Datatype>>* const activationFifoArrayPtr):
                                                                             m_activationFifoArrayPtr{activationFifoArrayPtr},
                                                                             m_activationFifoArraySize{m_activationFifoArrayPtr->size()},
@@ -226,6 +236,14 @@ public:
         return m_activeCurrent;
     }
 
+    /**
+     * @brief                       
+     * @param matrixPtr             
+     * @param matrixWidth           
+     * @param matrixHeight          
+     * @param matrixReadRepetitions 
+     */
+    
     void addInputMatrix(const Datatype* const matrixPtr,
                                 const size_t matrixWidth,
                                 const size_t matrixHeight,
@@ -363,6 +381,10 @@ public:
         }
     }
 
+    /**
+     * @brief
+     */
+    
     void runIteration()
     {
         if(m_activeCurrent)
@@ -528,6 +550,12 @@ public:
     }
 
 private:
+    
+    /**
+     * @brief                       
+     * @param activationFifoCount   
+     * @return                      
+     */
 
     bool runIterationMatrix0(const size_t activationFifoCount)
     {
@@ -601,6 +629,12 @@ private:
             return false;
         }
     }
+    
+    /**
+     * @brief                       
+     * @param activationFifoCount   
+     * @return                      
+     */
 
     bool runIterationMatrix1(const size_t activationFifoCount)
     {

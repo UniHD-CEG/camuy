@@ -35,6 +35,14 @@
 #include "processing_element.h"
 #include "activation_fifo.h"
 
+/**
+ * @class                       ProcessingElementLeftBorder
+ * @brief                       
+ * @tparam WeightDatatype       
+ * @tparam ActivationDatatype   
+ * @tparam SumDatatype          
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename SumDatatype> class ProcessingElementLeftBorder: public ProcessingElement<WeightDatatype,
@@ -43,6 +51,13 @@ template<typename WeightDatatype,
 {
 
 public:
+    
+    /**
+     * @brief                       
+     * @param position          
+     * @param neighborUpperPtr  
+     * @param activationFifoPtr 
+     */
 
     ProcessingElementLeftBorder(const PEPosition position,
                                 const ProcessingElement<WeightDatatype,
@@ -61,6 +76,11 @@ public:
                                     SumDatatype>::m_position.x) == 0);
     }
 
+    
+    /**
+     * @brief
+     */
+    
     void enableFifoInput(bool enabled)
     {
         m_fifoInputEnabledNext = enabled;
@@ -70,6 +90,11 @@ public:
     {
         return m_fifoInputEnabledCurrent;
     }
+    
+    /**
+     * @brief
+     * @param updateWeight
+     */
 
     void setUpdateWeightSignal(const bool updateWeight)
     {
@@ -86,7 +111,7 @@ public:
 
         m_fifoInputEnabledCurrent = m_fifoInputEnabledNext;
     }
-
+    
     void readUpdateWeightSignals() final
     {
         if(m_neighborUpperPtr)
@@ -98,6 +123,13 @@ public:
         }
     }
 
+    /**
+     * @brief
+     * @param intraPeDataMovements
+     * @param interPeDataMovements
+     * @param weightZeroCount
+     */
+    
     void computeSum(size_t& intraPeDataMovements,
                         size_t& interPeDataMovements,
                         size_t& weightZeroCount) final

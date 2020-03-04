@@ -48,9 +48,24 @@
 
 template<typename T> using RMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+
+/**
+ * @struct  AccumulatorArrayReadOperation
+ * @brief   
+ */
+
 struct AccumulatorArrayReadOperation
 {
 
+    /**
+     * @brief
+     * @param destMatrixRowStart
+     * @param destMatrixColumnStart
+     * @param accumulatorArrayBufferSelectBit
+     * @param blockHeight
+     * @param blockWidth
+     */
+    
     AccumulatorArrayReadOperation(const size_t destMatrixRowStart,
                                     const size_t destMatrixColumnStart,
                                     const bool accumulatorArrayBufferSelectBit,
@@ -74,6 +89,14 @@ struct AccumulatorArrayReadOperation
     bool accumulatorArrayBufferSelectBit;
 };
 
+/**
+ * @class                       MatrixProcessingUnit
+ * @brief
+ * @tparam WeightDatatype
+ * @tparam ActivationDatatype
+ * @tparam AccumulatorDatatype
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename AccumulatorDatatype> class MatrixProcessingUnit
@@ -81,6 +104,16 @@ template<typename WeightDatatype,
 
 public:
 
+    
+    /**
+     * @brief
+     * @param systolicArrayWidth
+     * @param systolicArrayHeight
+     * @param activationFifoDepth
+     * @param accumulatorArrayHeight
+     * @param unifiedBufferSizeByteMax
+     */
+    
     MatrixProcessingUnit(const size_t systolicArrayWidth,
                             const size_t systolicArrayHeight,
                             const size_t activationFifoDepth,
@@ -322,6 +355,14 @@ public:
                                         dest, src, size);
     }
 
+    /**
+     * @brief
+     * @param operationName
+     * @param weightMatrixPtr
+     * @param rows
+     * @param columns
+     */
+    
     void storeWeightMatrix(const std::string& operationName,
                                             const WeightDatatype* const weightMatrixPtr,
                                             const size_t rows,
@@ -333,6 +374,13 @@ public:
                                                 rows,
                                                 columns);
     }
+    
+    /**
+     * @brief
+     * @param activationMatrixPtr
+     * @param rows
+     * @param columns
+     */
 
     void storeActivationMatrix(const ActivationDatatype* const activationMatrixPtr,
                                                                     const size_t rows,
@@ -343,6 +391,12 @@ public:
                                                 rows,
                                                 columns);
     }
+    
+    /**
+     * @brief
+     * @param dest
+     * @param size
+     */
 
     void loadResultMatrix(AccumulatorDatatype* const dest,
                                             const size_t size) const
@@ -355,6 +409,17 @@ public:
         m_memoryManagementUnit.printMemoryLayout();
     }
 
+    
+    /**
+     * @brief
+     * @param sizeM
+     * @param sizeN
+     * @param sizeK
+     * @param matrixAPtr
+     * @param matrixBPtr
+     * @param matrixCPtr
+     */
+    
     void runMultiplication(const size_t sizeM,
                             const size_t sizeN,
                             const size_t sizeK,
@@ -926,6 +991,12 @@ public:
         }
     }
 
+    
+    /**
+     * @brief
+     * @param operationName
+     */
+    
     void runMultiplication(const std::string& operationName)
     {
 

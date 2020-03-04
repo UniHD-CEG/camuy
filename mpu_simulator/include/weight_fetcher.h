@@ -36,6 +36,11 @@
 
 #include "systolic_array.h"
 
+/**
+ * @struct WeightUpdateRequest
+ * @brief
+ */
+
 struct WeightUpdateRequest
 {
 
@@ -51,6 +56,14 @@ struct WeightUpdateRequest
     size_t diagonalsUpdated{0UL};
 };
 
+/**
+ * @class WeightFetcher         
+ * @brief                       
+ * @tparam WeightDatatype       
+ * @tparam ActivationDatatype   
+ * @tparam AccumulatorDatatype  
+ */
+
 template<typename WeightDatatype,
             typename ActivationDatatype,
             typename AccumulatorDatatype> class WeightFetcher
@@ -58,6 +71,11 @@ template<typename WeightDatatype,
 
 public:
 
+    /**
+     * @brief
+     * @param systolicArrayPtr
+     */
+    
     WeightFetcher(SystolicArray<WeightDatatype,
                                     ActivationDatatype,
                                     AccumulatorDatatype>* const systolicArrayPtr):
@@ -222,6 +240,14 @@ public:
         return m_activeColumnsLastBlockCurrent;
     }
 
+    
+    /**
+     * @brief
+     * @param weightArrayPtr
+     * @param width
+     * @param height
+     */
+    
     void setInput(const WeightDatatype* const weightArrayPtr,
                                           const size_t width,
                                           const size_t height)
@@ -274,6 +300,12 @@ public:
             m_idleRowsLastBlockMax = m_idleRowsLastBlockNext;
         }
     }
+    
+    /**
+     * @brief           
+     * @param blockX    
+     * @param blockY    
+     */
 
     void updateWeights(const size_t blockX,
                         const size_t blockY)
@@ -297,6 +329,10 @@ public:
     {
         m_clearWeightUpdateRequestQueueNext = true;
     }
+    
+    /**
+     * @brief
+     */
 
     void runIteration()
     {
@@ -378,6 +414,10 @@ public:
         }
     }
 
+    /**
+     * @brief
+     */
+    
     void updateState()
     {
         m_matrixPtrCurrent = m_matrixPtrNext;

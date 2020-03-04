@@ -32,10 +32,20 @@
 #include <exception>
 #include <string>
 
+/**
+ * @class MpuException
+ * @brief
+ */
+
 class MpuException: public std::exception
 {
 public:
 
+    /**
+     * @brief
+     * @param whatMessage
+     */
+    
     MpuException(const std::string& whatMessage): m_whatMessage{whatMessage} {   }
 
     const char* what() const noexcept override
