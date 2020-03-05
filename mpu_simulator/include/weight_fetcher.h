@@ -37,8 +37,12 @@
 #include "systolic_array.h"
 
 /**
- * @struct WeightUpdateRequest
- * @brief
+ * @struct  WeightUpdateRequest
+ * @brief   Struct representing the data required for a
+ *          weight update request: The x and y coordinate
+ *          of the block to be stored to the weight registers
+ *          of the systolic array PEs, as well as the
+ *          systolic array PE diagonals already updates
  */
 
 struct WeightUpdateRequest
@@ -57,11 +61,12 @@ struct WeightUpdateRequest
 };
 
 /**
- * @class WeightFetcher         
- * @brief                       
- * @tparam WeightDatatype       
- * @tparam ActivationDatatype   
- * @tparam AccumulatorDatatype  
+ * @class                       WeightFetcher
+ * @brief                       Functional unit responsible for storing weight matrix tiles
+ *                              to the weight registers of the systolic array PEs
+ * @tparam WeightDatatype       The weight datatype of the MPU
+ * @tparam ActivationDatatype   The activation datatype of the MPU
+ * @tparam AccumulatorDatatype  The accumulator datatype of the MPU
  */
 
 template<typename WeightDatatype,
@@ -239,7 +244,6 @@ public:
     {
         return m_activeColumnsLastBlockCurrent;
     }
-
     
     /**
      * @brief

@@ -48,22 +48,27 @@
 
 template<typename T> using RMatrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-
 /**
  * @struct  AccumulatorArrayReadOperation
- * @brief   
+ * @brief   Struct containing the data required for performing
+ *          a read operation from the accumulator array to the
+ *          unified buffer: The row and column of the tile
+ *          within the result matrix, the accumulator array
+ *          double buffer containing the result matrix tile,
+ *          and the width and height of the tile.
  */
 
 struct AccumulatorArrayReadOperation
 {
 
     /**
-     * @brief
-     * @param destMatrixRowStart
-     * @param destMatrixColumnStart
-     * @param accumulatorArrayBufferSelectBit
-     * @param blockHeight
-     * @param blockWidth
+     * @brief                                   AccumulatorArrayReadOperation constructor
+     * @param destMatrixRowStart                The row of the result matrix tile within the result matrix
+     * @param destMatrixColumnStart             The column of the result matrix tile within the result matrix
+     * @param accumulatorArrayBufferSelectBit   The accumulator array double buffer select bit value of the
+     *                                          of the buffer containing the result matrix tile
+     * @param blockHeight                       The height of the result matrix tile
+     * @param blockWidth                        The width of the result matrix tile
      */
     
     AccumulatorArrayReadOperation(const size_t destMatrixRowStart,
@@ -91,10 +96,10 @@ struct AccumulatorArrayReadOperation
 
 /**
  * @class                       MatrixProcessingUnit
- * @brief
- * @tparam WeightDatatype
- * @tparam ActivationDatatype
- * @tparam AccumulatorDatatype
+ * @brief                       Class containing all of the required MPU submodules and the main control unit (MCU) logic
+ * @tparam WeightDatatype       The weight datatype used by the MPU
+ * @tparam ActivationDatatype   The activation datatype used by the MPU
+ * @tparam AccumulatorDatatype  The partial sum/result datatype used by the MPU
  */
 
 template<typename WeightDatatype,
@@ -106,12 +111,12 @@ public:
 
     
     /**
-     * @brief
-     * @param systolicArrayWidth
-     * @param systolicArrayHeight
-     * @param activationFifoDepth
-     * @param accumulatorArrayHeight
-     * @param unifiedBufferSizeByteMax
+     * @brief                           MatrixProcessingUnit constructor initializing all MPU submodules
+     * @param systolicArrayWidth        The width of the systolic array
+     * @param systolicArrayHeight       The height of the systolic array
+     * @param activationFifoDepth       The depth of the activation FIFOs connecting the SDSU and the systolic array
+     * @param accumulatorArrayHeight    The height of the accumulator array
+     * @param unifiedBufferSizeByteMax  The maximum size of the unified buffer
      */
     
     MatrixProcessingUnit(const size_t systolicArrayWidth,
@@ -356,11 +361,11 @@ public:
     }
 
     /**
-     * @brief
-     * @param operationName
-     * @param weightMatrixPtr
-     * @param rows
-     * @param columns
+     * @brief                   Function to store weight matrices to the unified buffer
+     * @param operationName     The string identifier of the weight matrix to be stored
+     * @param weightMatrixPtr   A pointer to the weight matrix to be stored
+     * @param rows              The rows of the weight matrix
+     * @param columns           The columns of the weight matrix
      */
     
     void storeWeightMatrix(const std::string& operationName,
@@ -376,10 +381,10 @@ public:
     }
     
     /**
-     * @brief
-     * @param activationMatrixPtr
-     * @param rows
-     * @param columns
+     * @brief                       Function to store activation matrices to the unified buffer
+     * @param activationMatrixPtr   A pointer to the activation matrix to be stored
+     * @param rows                  The rows of the activation matrix
+     * @param columns               The columns of the activation matrix
      */
 
     void storeActivationMatrix(const ActivationDatatype* const activationMatrixPtr,
@@ -393,9 +398,9 @@ public:
     }
     
     /**
-     * @brief
-     * @param dest
-     * @param size
+     * @brief       Function to load result matrices from the unified buffer
+     * @param dest  A pointer to which the result matrix will be stored
+     * @param size  The size of the result matrix
      */
 
     void loadResultMatrix(AccumulatorDatatype* const dest,

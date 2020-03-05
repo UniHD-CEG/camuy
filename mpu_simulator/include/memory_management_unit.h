@@ -208,6 +208,14 @@ public:
 
     }
 
+    /**
+     * @brief
+     * @param oparationName
+     * @param src
+     * @param rows
+     * @param columns
+     */
+    
     void storeWeightMatrixManaged(const std::string& operationName,
                                     const WeightDatatype* const src,
                                     const size_t rows,
@@ -331,6 +339,13 @@ public:
         return reinterpret_cast<ActivationDatatype*>(m_unifiedBufferPtr->data() +
                                                             m_weightMatrixSpaceEnd);
     }
+    
+    /**
+     * @brief
+     * @param src
+     * @param rows
+     * @param columns
+     */
 
     void storeActivationMatrixManaged(const ActivationDatatype* const src,
                                                             const size_t rows,
@@ -449,6 +464,12 @@ public:
                                         m_activationMatrixSpaceEnd);
     }
 
+    /**
+     * @brief
+     * @param rows
+     * @param columns
+     */
+    
     void setResultMatrixSizeManaged(const size_t rows,
                                     const size_t columns)
     {
@@ -507,6 +528,12 @@ public:
 
     }
 
+    /**
+     * @brief
+     * @param dest
+     * @param size
+     */
+    
     void loadResultMatrixManaged(ResultDatatype* const dest,
                                             const size_t size) const
     {
