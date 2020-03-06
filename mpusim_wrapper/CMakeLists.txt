@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.10)
 
 include(DefaultFlags.cmake)
 
-set(MPUSIM__EIGEN3_INSTALL_DIR "" CACHE STRING "Install directory of eigen3, required if installed locally")
+set(MPUSIM_WRAPPER_EIGEN3_INSTALL_DIR "" CACHE STRING "Install directory of eigen3, required if installed locally")
 option(MPUSIM_WRAPPER_EIGEN3_LOCAL_INSTALL "Use local installation of eigen3" OFF)
 
 if(NOT MPUSIM_WRAPPER_EIGEN3_LOCAL_INSTALL)
@@ -33,7 +33,7 @@ else()
 endif()
 
 set(MPUSIM_WRAPPER_MPUSIM_INCLUDE_DIR "" CACHE STRING "Directory of mpusim header files")
-set(MPUSIM_WRAPPER_MPUSIM_LIB_DIR "" CACHE STRING "Directory of libmpusim.so")
+set(MPUSIM_WRAPPER_MPUSIM_INSTALL_DIR "" CACHE STRING "Directory of libmpusim.so")
 
 #General
 
@@ -51,7 +51,7 @@ set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsaniti
 
 include_directories("${MPUSIM_WRAPPER_EIGEN3_INSTALL_DIR}/include" ${MPUSIM_WRAPPER_MPUSIM_INCLUDE_DIR})
 
-link_directories(${MPUSIM_WRAPPER_MPUSIM_LIB_DIR})
+link_directories(${MPUSIM_WRAPPER_MPUSIM_INSTALL_DIR})
 
 set(MPUSIM_WRAPPER_SOURCES mpusim_wrapper.h
                             mpusim_wrapper.cpp)
