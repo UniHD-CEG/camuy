@@ -34,6 +34,11 @@
 #include "matrix_processing_unit.h"
 #include "mpu_statistics_logger.h"
 
+/**
+ * @class MpuSimWrapper
+ * @brief
+ */
+
 class MpuSimWrapper final
 {
 public:
@@ -44,6 +49,26 @@ public:
         return instance;
     }
     
+    
+/**
+ * @brief                               
+ * @param activationsDatatypeSizeByte   
+ * @param weightsDatatypeSizeByte       
+ * @param resultsDatatypeSizeByte       
+ * @param systolicArrayHeight           
+ * @param systolicArrayWidth            
+ * @param activationFifoDepth           
+ * @param accumulatorArrayHeight        
+ * @param sizeM                         
+ * @param sizeN                         
+ * @param sizeK                         
+ * @param activationMatrix              
+ * @param weightMatrix                  
+ * @param resultMatrix                  
+ * @param logFileOutputDirString        
+ * @param modelNameString               
+ * @param operationNameString           
+ */
     
 void runMultiplication(const size_t activationsDatatypeSizeByte,
                                 const size_t weightsDatatypeSizeByte,
