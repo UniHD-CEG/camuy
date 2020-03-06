@@ -479,7 +479,7 @@ public:
 
         if(m_debugFlag)
         {
-            std::cout << "Tensor Processing Unit: Matrix multiplication: "
+            std::cout << "Matrix Processing Unit: Matrix multiplication: "
                         << "Startup\nInput matrix dimensions:\tM: " << sizeM
                         << "\tN: " << sizeN << "\tK: " << sizeK << std::endl;
         }
@@ -973,7 +973,7 @@ public:
 
         if(m_debugFlag)
         {
-            std::cout << "Tensor processing unit: "
+            std::cout << "Matrix processing unit: "
                             "Matrix multiplication: Done\nRequired iterations: "
                         << m_iterationCountTotal
                         << "\nStalled iterations: "

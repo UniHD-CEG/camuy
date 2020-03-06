@@ -33,8 +33,8 @@ endif()
 
 set(MPUSIM_FC_MPUSIM_INCLUDE_DIR "" CACHE STRING "Directory of mpusim header files")
 set(MPUSIM_FC_MPUSIM_WRAPPER_INCLUDE_DIR "" CACHE STRING "Directory of mpusim header files")
-set(MPUSIM_FC_MPUSIM_WRAPPER_LIB_DIR "" CACHE STRING "Directory of libmpusim-wrapper.so")
-set(MPUSIM_FC_TENSORFLOW_LIBS_DIR "" CACHE STRING "Directory of tensorflow libraries")
+set(MPUSIM_FC_MPUSIM_WRAPPER_INSTALL_DIR "" CACHE STRING "Directory of libmpusim-wrapper.so")
+set(MPUSIM_FC_TENSORFLOW_INSTALL_DIR "" CACHE STRING "Directory of tensorflow libraries")
 
 #General
 
@@ -49,7 +49,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ltensorflow_framewo
 
 include_directories("${MPUSIM_FC_EIGEN3_INSTALL_DIR}/include" ${MPUSIM_FC_MPUSIM_INCLUDE_DIR} ${MPUSIM_FC_MPUSIM_WRAPPER_INCLUDE_DIR})
 
-link_directories(${MPUSIM_FC_TENSORFLOW_LIBS_DIR} ${MPUSIM_FC_MPUSIM_WRAPPER_LIB_DIR})
+link_directories(${MPUSIM_FC_TENSORFLOW_INSTALL_DIR} ${MPUSIM_FC_MPUSIM_WRAPPER_INSTALL_DIR})
 
 add_library(${PROJECT_NAME} SHARED mpusim_mat_mul.cpp)
 
