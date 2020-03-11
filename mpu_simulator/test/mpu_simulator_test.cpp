@@ -1,4 +1,4 @@
-/* Copyright (c) 2019, 2020 Kevin Stehle
+/* Copyright 2019, 2020 Kevin Stehle
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,17 +43,9 @@ int main(int argc, char** argv)
     using ActivationDatatype = int8_t;
     using AccumulatorDatatype = int32_t;
 
-    constexpr size_t systolicArrayWidth{8UL};
-    constexpr size_t systolicArrayHeight{256UL};
-    constexpr size_t accumulatorArrayHeight{1024UL};
-
-//    constexpr size_t systolicArrayWidth{77UL};
-//    constexpr size_t systolicArrayHeight{17UL};
-//    constexpr size_t accumulatorArrayHeight{190UL};
-
-//    constexpr size_t systolicArrayWidth{256UL};
-//    constexpr size_t systolicArrayHeight{256UL};
-//    constexpr size_t accumulatorArrayHeight{4096UL};
+    constexpr size_t systolicArrayWidth{64UL};
+    constexpr size_t systolicArrayHeight{64UL};
+    constexpr size_t accumulatorArrayHeight{256UL};
 
     constexpr size_t activationFifoDepth{8UL};
     constexpr size_t unifiedBufferSizeByte{3UL*1024UL*1024UL*1024UL};
@@ -67,7 +59,6 @@ int main(int argc, char** argv)
 
 
     matrixProcessingUnit.setDebugFlag(true);
-//    matrixProcessingUnit.setDebugOutputVerboseFlag(true);
 
     MpuStatisticsLogger mpuStatisticsLogger("test", sizeof(WeightDatatype),
                                                 sizeof(ActivationDatatype),
@@ -91,9 +82,11 @@ int main(int argc, char** argv)
     std::vector<AccumulatorDatatype> resultMatrix;
 
     size_t multiplicationCount{0UL};
+    
+    bool sanityCheckPassedDynamic{true};
+    bool sanityCheckPassedStatic{true};
 
-    std::cout << "MPU memory management unit test: "
-                        "Dynamic unified buffer resize" << std::endl;
+    std::cout << "MPU test 0: Dynamic unified buffer resize" << std::endl;
 
     for(size_t memoryManagementUnitTestCount{0UL}; memoryManagementUnitTestCount < 16UL;
                                                                     ++memoryManagementUnitTestCount)
@@ -162,7 +155,7 @@ int main(int argc, char** argv)
 
         Eigen::Map<const RMatrix<ActivationDatatype>> matrixAEigen(
                                                             activationMatrix.data(),
-                                                                       sizeMConst, sizeKConst);
+                                                                    sizeMConst, sizeKConst);
 
         Eigen::Map<const RMatrix<WeightDatatype>> matrixBEigen(
                                                         weightMatrix.data(),
@@ -170,8 +163,6 @@ int main(int argc, char** argv)
 
         const RMatrix<AccumulatorDatatype> matrixCEigen{matrixAEigen.template cast<AccumulatorDatatype>()*
                                                         matrixBEigen.template cast<AccumulatorDatatype>()};
-
-        bool sanityCheckPassed{true};
 
         for(size_t rowCount{0}; rowCount < sizeMConst; ++rowCount)
         {
@@ -187,219 +178,150 @@ int main(int argc, char** argv)
                                 << " actual value: "
                                 << resultMatrix[rowCount*sizeNConst + columnCount] << std::endl;
 
-                    sanityCheckPassed = false;
+                    sanityCheckPassedDynamic = false;
                 }
             }
         }
-
-        assert(sanityCheckPassed);
-
-        matrixProcessingUnit.resetIterationCounts();
-        matrixProcessingUnit.resetDataMovementAndFootprintMetrics();
     }
 
     matrixProcessingUnit.printUnifiedBufferLayout();
 
-//    matrixProcessingUnit.resetMemoryManagementUnit();
-//    matrixProcessingUnit.setUnifiedBufferDynamicResize(false);
-//    matrixProcessingUnit.resetIterationCounts();
-//    matrixProcessingUnit.resetDataMovementAndFootprintMetrics();
+    matrixProcessingUnit.resetMemoryManagementUnit();
+    matrixProcessingUnit.setUnifiedBufferDynamicResize(false);
+    matrixProcessingUnit.resetIterationCounts();
+    matrixProcessingUnit.resetDataMovementAndFootprintMetrics();
 
-//    multiplicationCount = 0UL;
+    multiplicationCount = 0UL;
 
-//    std::cout << "MPU memory management unit test: "
-//                        "Static unified buffer size" << std::endl;
+    std::cout << "MPU test 1: Static unified buffer size" << std::endl;
 
-//    for(size_t memoryManagementUnitTestCount{0UL}; memoryManagementUnitTestCount < 2UL;
-//                                                                    ++memoryManagementUnitTestCount)
-//    {
-//        ++multiplicationCount;
+    for(size_t memoryManagementUnitTestCount{0UL}; memoryManagementUnitTestCount < 16UL;
+                                                                    ++memoryManagementUnitTestCount)
+    {
+        ++multiplicationCount;
 
-//        std::cout << "Multiplication " << multiplicationCount << std::endl;
+        std::cout << "Multiplication " << multiplicationCount << std::endl;
 
-//        size_t sizeM;
-//        size_t sizeN;
-//        size_t sizeK;
+        size_t sizeM;
+        size_t sizeN;
+        size_t sizeK;
 
-//        do
-//        {
-//            sizeM = matrixDimensionDistribution(rng);
-//            sizeN = matrixDimensionDistribution(rng);
-//            sizeK = matrixDimensionDistribution(rng);
-//        }
+        do
+        {
+            sizeM = matrixDimensionDistribution(rng);
+            sizeN = matrixDimensionDistribution(rng);
+            sizeK = matrixDimensionDistribution(rng);
+        }
 
-//        while((sizeM*sizeN*sizeK > (1UL << 24)) ||
-//                            ((sizeN <= systolicArrayWidth) !=
-//                                (sizeK <= systolicArrayHeight)));
+        while((sizeM*sizeN*sizeK > (1UL << 24)) ||
+                            ((sizeN <= systolicArrayWidth) !=
+                                (sizeK <= systolicArrayHeight)));
 
-//        const size_t sizeMConst{sizeM};
-//        const size_t sizeNConst{sizeN};
-//        const size_t sizeKConst{sizeK};
+        const size_t sizeMConst{sizeM};
+        const size_t sizeNConst{sizeN};
+        const size_t sizeKConst{sizeK};
 
-//        activationMatrix.clear();
+        activationMatrix.clear();
 
-//        for(size_t rowCount{0}; rowCount < sizeMConst; ++rowCount)
-//        {
-//            for(size_t columnCount{0}; columnCount < sizeKConst; ++columnCount)
-//            {
-//                activationMatrix.emplace_back(static_cast<ActivationDatatype>(
-//                                                            matrixValueDistribution(rng)));
-//            }
-//        }
+        for(size_t rowCount{0}; rowCount < sizeMConst; ++rowCount)
+        {
+            for(size_t columnCount{0}; columnCount < sizeKConst; ++columnCount)
+            {
+                activationMatrix.emplace_back(static_cast<ActivationDatatype>(
+                                                            matrixValueDistribution(rng)));
+            }
+        }
 
-//        weightMatrix.clear();
+        weightMatrix.clear();
 
-//        for(size_t rowCount{0}; rowCount < sizeKConst; ++rowCount)
-//        {
-//            for(size_t columnCount{0}; columnCount < sizeNConst; ++columnCount)
-//            {
-//                weightMatrix.emplace_back(static_cast<WeightDatatype>(
-//                                                    matrixValueDistribution(rng)));
-//            }
-//        }
+        for(size_t rowCount{0}; rowCount < sizeKConst; ++rowCount)
+        {
+            for(size_t columnCount{0}; columnCount < sizeNConst; ++columnCount)
+            {
+                weightMatrix.emplace_back(static_cast<WeightDatatype>(
+                                                    matrixValueDistribution(rng)));
+            }
+        }
 
-//        matrixProcessingUnit.storeActivationMatrix(activationMatrix.data(),
-//                                                        sizeMConst, sizeKConst);
+        matrixProcessingUnit.storeActivationMatrix(activationMatrix.data(),
+                                                        sizeMConst, sizeKConst);
 
-//        const std::string weightMatrixNameString{"test" + std::to_string(multiplicationCount)};
+        const std::string weightMatrixNameString{"test" + std::to_string(multiplicationCount)};
 
-//        matrixProcessingUnit.storeWeightMatrix(weightMatrixNameString,
-//                                                    weightMatrix.data(),
-//                                                    sizeKConst, sizeNConst);
+        matrixProcessingUnit.storeWeightMatrix(weightMatrixNameString,
+                                                    weightMatrix.data(),
+                                                    sizeKConst, sizeNConst);
 
-//        matrixProcessingUnit.runMultiplication(weightMatrixNameString);
+        matrixProcessingUnit.runMultiplication(weightMatrixNameString);
 
-//        resultMatrix.clear();
-//        resultMatrix.resize(sizeMConst*sizeNConst);
+        resultMatrix.clear();
+        resultMatrix.resize(sizeMConst*sizeNConst);
 
-//        matrixProcessingUnit.loadResultMatrix(resultMatrix.data(),
-//                                                resultMatrix.size());
+        matrixProcessingUnit.loadResultMatrix(resultMatrix.data(),
+                                                resultMatrix.size());
 
-//        Eigen::Map<const RMatrix<ActivationDatatype>> matrixAEigen(
-//                                                            activationMatrix.data(),
-//                                                                       sizeMConst, sizeKConst);
+        Eigen::Map<const RMatrix<ActivationDatatype>> matrixAEigen(
+                                                            activationMatrix.data(),
+                                                                        sizeMConst, sizeKConst);
 
-//        Eigen::Map<const RMatrix<WeightDatatype>> matrixBEigen(
-//                                                        weightMatrix.data(),
-//                                                                sizeKConst, sizeNConst);
+        Eigen::Map<const RMatrix<WeightDatatype>> matrixBEigen(
+                                                        weightMatrix.data(),
+                                                                sizeKConst, sizeNConst);
 
-//        const RMatrix<AccumulatorDatatype> matrixCEigen{matrixAEigen.template cast<AccumulatorDatatype>()*
-//                                                        matrixBEigen.template cast<AccumulatorDatatype>()};
+        const RMatrix<AccumulatorDatatype> matrixCEigen{matrixAEigen.template cast<AccumulatorDatatype>()*
+                                                        matrixBEigen.template cast<AccumulatorDatatype>()};
 
-//        bool sanityCheckPassed{true};
+        for(size_t rowCount{0}; rowCount < sizeM; ++rowCount)
+        {
+            for(size_t columnCount{0}; columnCount < sizeN; ++columnCount)
+            {
+                if(resultMatrix[rowCount*sizeN + columnCount] !=
+                                    matrixCEigen(rowCount, columnCount))
+                {
+                    std::cout << "Systolic array output incorrect at ("
+                                << columnCount << ", " << rowCount
+                                << "): Expected value: "
+                                << matrixCEigen(rowCount, columnCount)
+                                << " actual value: "
+                                << resultMatrix[rowCount*sizeN + columnCount] << std::endl;
 
-//        for(size_t rowCount{0}; rowCount < sizeM; ++rowCount)
-//        {
-//            for(size_t columnCount{0}; columnCount < sizeN; ++columnCount)
-//            {
-//                if(resultMatrix[rowCount*sizeN + columnCount] !=
-//                                    matrixCEigen(rowCount, columnCount))
-//                {
-//                    std::cout << "Systolic array output incorrect at ("
-//                                << columnCount << ", " << rowCount
-//                                << "): Expected value: "
-//                                << matrixCEigen(rowCount, columnCount)
-//                                << " actual value: "
-//                                << resultMatrix[rowCount*sizeN + columnCount] << std::endl;
-
-//                    sanityCheckPassed = false;
-//                }
-//            }
-//        }
-
-//        assert(sanityCheckPassed);
-//    }
-
-//    matrixProcessingUnit.printUnifiedBufferLayout();
-
-//    matrixProcessingUnit.resetMemoryManagementUnit();
-//    matrixProcessingUnit.setUnifiedBufferDynamicResize(false);
-
-//    multiplicationCount = 0UL;
-
-//    std::cout << "Starting infinite multiplication test loop..." << std::endl;
-
-//    while(true)
-//    {
-//        ++multiplicationCount;
-
-//        std::cout << "Multiplication " << multiplicationCount << std::endl;
-
-//        size_t sizeM;
-//        size_t sizeN;
-//        size_t sizeK;
-
-//        do
-//        {
-//            sizeM = matrixDimensionDistribution(rng);
-//            sizeN = matrixDimensionDistribution(rng);
-//            sizeK = matrixDimensionDistribution(rng);
-//        }
-
-//        while((sizeM*sizeN*sizeK > (1UL << 24)) ||
-//                            ((sizeN <= systolicArrayWidth) !=
-//                                (sizeK <= systolicArrayHeight)));
-
-//        const size_t sizeMConst{sizeM};
-//        const size_t sizeNConst{sizeN};
-//        const size_t sizeKConst{sizeK};
-
-//        activationMatrix.clear();
-
-//        for(size_t rowCount{0}; rowCount < sizeMConst; ++rowCount)
-//        {
-//            for(size_t columnCount{0}; columnCount < sizeKConst; ++columnCount)
-//            {
-//                activationMatrix.emplace_back(static_cast<ActivationDatatype>(
-//                                                            matrixValueDistribution(rng)));
-//            }
-//        }
-
-//        weightMatrix.clear();
-
-//        for(size_t rowCount{0}; rowCount < sizeKConst; ++rowCount)
-//        {
-//            for(size_t columnCount{0}; columnCount < sizeNConst; ++columnCount)
-//            {
-//                weightMatrix.emplace_back(static_cast<WeightDatatype>(
-//                                                    matrixValueDistribution(rng)));
-//            }
-//        }
-
-//        resultMatrix.clear();
-//        resultMatrix.resize(sizeMConst*sizeNConst);
-
-//        mpusim::byte* const activationMatrixDestAddress{
-//                            matrixProcessingUnit.getUnifiedBufferAddress()};
-
-//        mpusim::byte* const weightMatrixDestAddress{
-//                            matrixProcessingUnit.getUnifiedBufferAddress() +
-//                            activationMatrix.size()*sizeof(ActivationDatatype)};
-
-//        mpusim::byte* const resultMatrixSrcAddress{
-//                            matrixProcessingUnit.getUnifiedBufferAddress() +
-//                            activationMatrix.size()*sizeof(ActivationDatatype) +
-//                            weightMatrix.size()*sizeof(WeightDatatype)};
-
-//        matrixProcessingUnit.storeToUnifiedBuffer(activationMatrixDestAddress,
-//                                                    reinterpret_cast<mpusim::byte*>(activationMatrix.data()),
-//                                                    activationMatrix.size()*sizeof(ActivationDatatype));
-
-//        matrixProcessingUnit.storeToUnifiedBuffer(weightMatrixDestAddress,
-//                                                    reinterpret_cast<mpusim::byte*>(weightMatrix.data()),
-//                                                    weightMatrix.size()*sizeof(WeightDatatype));
-
-//        matrixProcessingUnit.runMultiplication(sizeMConst, sizeNConst, sizeKConst,
-//                                                reinterpret_cast<ActivationDatatype*>(
-//                                                                    activationMatrixDestAddress),
-//                                                reinterpret_cast<WeightDatatype*>(
-//                                                                    weightMatrixDestAddress),
-//                                                reinterpret_cast<AccumulatorDatatype*>(
-//                                                                    resultMatrixSrcAddress));
-
-//        matrixProcessingUnit.loadFromUnifiedBuffer(reinterpret_cast<mpusim::byte*>(resultMatrix.data()),
-//                                                    resultMatrixSrcAddress, resultMatrix.size()*sizeof(AccumulatorDatatype));
-//    }
-
-    return 0;
+                    sanityCheckPassedStatic = false;
+                }
+            }
+        }
+    }
+    
+    matrixProcessingUnit.printUnifiedBufferLayout();
+    
+    std::cout << "================================ SUMMARY ================================\n\n";
+    
+    if(sanityCheckPassedDynamic)
+    {
+        std::cout << "Test 0: Matrix multiplication using dynamic unified buffer resizing\t\tPASSED\n\n";
+    }
+    
+    else
+    {
+        std::cout << "Test 0: Matrix multiplication using dynamic unified buffer resizing\t\tFAILED\n\n";
+    }
+    
+    if(sanityCheckPassedStatic)
+    {
+        std::cout << "Test 1: Matrix multiplication using static dynamic buffer size\t\tPASSED\n\n";
+    }
+    
+    else
+    {
+        std::cout << "Test 1: Matrix multiplication using static dynamic buffer size\t\tFAILED\n\n";
+    }
+    
+    if(!(sanityCheckPassedDynamic && sanityCheckPassedStatic))
+    {
+        return -1;
+    }
+    
+    else
+    {
+        return 0;
+    }
 }

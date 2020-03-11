@@ -1,4 +1,4 @@
-# Copyright (c) 2019, 2020 Kevin Stehle
+# Copyright 2019, 2020 Kevin Stehle
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ project(mpusim-mat-mul)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/home/kstehle/tensorflow -D_GLIBCXX_USE_CXX11_ABI=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../../third_party/tensorflow -D_GLIBCXX_USE_CXX11_ABI=1")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ltensorflow_framework")
 
