@@ -36,8 +36,7 @@ The usage of the library itself without the wrapper and the TensorFlow/Tensorpac
 
 #### Instantiate a MatrixProcessingUnit object with the desired weight, activation, and accumulator/result data type, systolic array size, activation FIFO depth, accumulator array height, and maximum unified buffer size
 
-The accumulator array height should generally exceed the systolic array height.
-TODO: Add minimum activation FIFO depth
+The systolic array height and width both have to be greater than 2. The accumulator array height should generally exceed the systolic array height, and has to be greater than 4. The activation FIFO depth has to be greater than 4.
 
 Example:
 
@@ -124,15 +123,15 @@ This library serves as a wrapper for the mpu_simulator library. It ensures that 
 
 ### mpusim_conv2d
 
-This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found in https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc, that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found in https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py, which calls the custom TensorFlow conv2d operator in the background.
+This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc), that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py), which calls the custom TensorFlow conv2d operator in the background.
 
 ### mpusim_fc
 
-This project implements the C++ implementation of a Tensorflow matrix multiplication layer, based on the TensorFlow operator MatMulOp https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc.
+This project implements the C++ implementation of a Tensorflow matrix multiplication layer based on the TensorFlow operator MatMulOp, which can be found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc). This operator is then called by the custom TensorFlow operator MpuSimFc, based on the TensorFlow operator Dense found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/python/keras/layers/core.py). This operator in turn is called by the custom Tensorpack operator MpuSimFullyConnected, which is based on the Tensorpack operator FullyConnected found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/fc.py).
 
-## Usage of the Tensorpack operators
+## Usage of the custom Tensorpack operators
 
-The custom Tensorpack operators have some additional parameters compared to the standard Tensorpack operators which are used to control the MPU parameters and logging of execution metrics. These are described in the following.
+The custom Tensorpack operators have some additional parameters compared to the standard Tensorpack operators which are used to control the MPU parameters and logging of execution metrics. These are described in the following list:
 
 | Parameter                         | Description                                       | Options               |
 | --------------------------------- | ------------------------------------------------- | --------------------- |
@@ -146,3 +145,25 @@ The custom Tensorpack operators have some additional parameters compared to the 
 | `log_file_output_dir`             | Directory to which the log file will be written   | Any valid directory   |
 | `model_name`                      | Name of the current model                         | Any valid filename    |
 
+While changing of the activation/weight/result datatype size, systolic array height/width, activation FIFO depth, and accumulator array height result in the destruction of the current MPU instance and construction of a new one with the specified parameters, changing the output log file directory and model name does not. This was deemed acceptable, as the output log file directory and name generally does not change for execution of a single model. The log file name and directory encountered in the first call to one of the custom Tensorpack operators decides the name and directory, until the mpusim_wrapper object is deleted upon completion of execution of the model script. By making use of the Tensorpack `argscope` context, the parameters can be selected for the whole model, for example:
+
+```python
+with argscope([MpuSimConv2D, MpuSimFullyConnected],
+                        activations_datatype_size_byte=8, 
+                        weights_datatype_size_byte=8,
+                        results_datatype_size_byte=32,
+                        systolic_array_height=256,
+                        systolic_array_width=256,
+                        activation_fifo_depth=8,
+                        accumulator_array_height=512,
+                        log_file_output_dir=("log_file_directory"),
+                        model_name='model_name'):
+        
+    l = MpuSimConv2D('conv1', image, filters=96, kernel_size=11, strides=4, padding='VALID')
+    l = MpuSimFullyConnected('fc8', l, 1000)
+```
+
+As seen in this example, using the `argscope` functionality, the custom Tensorpack operators can essentially function as drop in replacements for their default Tensorpack operator counterparts.
+The resulting log file of the performed matrix multiplications in a model is written to the filesystem when execution of the model script has finished and the mpusim_wrapper object is deleted.
+
+## Example models
