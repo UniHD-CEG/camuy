@@ -42,11 +42,13 @@ TODO: Add minimum activation FIFO depth
 Example:
 
 ```cpp
-MatrixProcessingUnit<WeightDatatype, ActivationDatatype, AccumulatorDatatype> matrixProcessingUnit(systolicArrayWidth,
-                                                                                                    systolicArrayHeight,
-                                                                                                    activationFifoDepth,
-                                                                                                    accumulatorArrayHeight,
-                                                                                                    unifiedBufferSizeByte);
+MatrixProcessingUnit<WeightDatatype,
+                        ActivationDatatype,
+                        AccumulatorDatatype> matrixProcessingUnit(systolicArrayWidth,
+                                                                    systolicArrayHeight,
+                                                                    activationFifoDepth,
+                                                                    accumulatorArrayHeight,
+                                                                    unifiedBufferSizeByte);
 ```
 
 #### Set the desired debug output verbosity
@@ -56,12 +58,12 @@ The tool implements two debug output verbosity levels. Debug messages are activa
 #### Optional: Select the unified buffer resize mode
 
 The project provides two unified buffer resize modes. In the default dynamic resize mode, the array used for emulation of the unified buffer is resized according to the currently needed space for storing all weight matrices as well as the activation and the result matrix. The memory is extended up to the chosen maximum unified buffer size. If the required memory exceeds this limit, and exception is thrown.
-While this approach is memory efficient, the frequent resizing of the unified buffer array incurs some overhead. As an alternative, the project provides the static unified buffer size mode. In this mode, the unified buffer array is allocated on MatrixProcessingUnit object initialization with the given maximum unified buffer size, and only the pointers to the weight/activation/result segments are shifted. When a store operation results in memory usage beyond the allocated size, an exception is thrown.
+While this approach is memory efficient, the frequent resizing of the unified buffer array incurs some overhead. As an alternative, the project provides the static unified buffer size mode. The emulated MPU can be set to this mode by passing `false` to the method `setUnifiedBufferDynamicResize()`. In this mode, the unified buffer array is allocated on MatrixProcessingUnit object initialization with the given maximum unified buffer size, and only the pointers to the weight/activation/result segments are shifted. When a store operation results in memory usage beyond the allocated size, an exception is thrown.
 
 #### Optional: Register a callback to collect execution metrics
 
 Using the method `registerLogEntryAvailableCallback()`, a callback function can be registered that will be called upon successful matrix multiplication computation. This callback contains execution metrics such as total required iterations and data movements between the functional units and the unified buffer of the emulated MPU.
-The `mpuStatisticsLogger` class contained in the mpu_simulator project provides such a callback function that simply stores the received metrics in a CSV file, with a filename generated from the combined directory and name prefix and a weight/activation/accumulator datatype size combination.
+The `MpuStatisticsLogger` class contained in the mpu_simulator project provides such a callback function that simply stores the received metrics in a CSV file, with a filename generated from the combined directory and name prefix and a weight/activation/accumulator datatype size combination.
 Example:
 
 ```cpp
@@ -89,16 +91,14 @@ The activation matrices are stored using the method `storeActivationMatrix()`. T
 Example:
 
 ```cpp
-matrixProcessingUnit.storeWeightMatrix(weightMatrixNameString,
-                                            weightMatrix.data(),
-                                            sizeKConst, sizeNConst);
+matrixProcessingUnit.storeActivationMatrix(actMatrixPtr,
+                                            height, width);
 ```
         
 #### Run the matrix multiplication
 
 To multiplication process is started using the method `runMultiplication()`. This method requires the name of the weight matrix to be used in the multiplication as a parameter.
-Note: The MPU architecture in its current state can only process matrices where ((N <= systolicArrayWidth) !=
-                                (K <= systolicArrayHeight))
+Note: The MPU architecture in its current state can only process matrices where !((N > systolicArrayWidth) && (K <= systolicArrayHeight)).
 
 #### Load the result matrix from the emulated MPU unified buffer
 
@@ -110,14 +110,28 @@ matrixProcessingUnit.loadResultMatrix(resultMatrixPtr,
                                         resultMatrixSize);
 ```
 
+#### Optional: Reset iteration counts/execution metrics
+
+The iteration counts can be reset through the method `resetIterationCounts()`. The other execution metrics can be reset through the method `resetDataMovementAndFootprintMetrics()`.
+
+#### Optional: Reset Memory Management Unit
+
+The Memory Management Unit can be reset by the method `resetMemoryManagementUnit()`. In dynamic allocation mode, the array emulating the unified buffer is freed, and the dope vectors of the stored matrices are deleted. In static allocation mode, this simply results in deletion of the corresponding dope vectors.
+
 ### mpusim_wrapper
 
-This library serves as a wrapper for the mpu_simulator library. It ensures that only a single instance of the model is active at any given point. It also ensures that the input matrices are padded for input sizes that are outside the limitations of the emulator.
+This library serves as a wrapper for the mpu_simulator library. It ensures that only a single instance of the model is active at any given point. It also ensures that the input matrices are padded for input sizes that are outside the limitations of the emulator. After every multiplication, the iteration count and execution metrics are reset.
 
 ### mpusim_conv2d
 
 This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found in https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc, that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found in https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py, which calls the custom TensorFlow conv2d operator in the background.
 
+### Usage of the Tensorpack operator
+
+The custom Tensorpack operator MpuSimConv2D
+
 ### mpusim_fc
 
 This project implements the C++ implementation of a Tensorflow matrix multiplication layer, based on the TensorFlow operator MatMulOp https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc.
+
+### Usage of the Tensorpack operator
