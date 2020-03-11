@@ -126,12 +126,23 @@ This library serves as a wrapper for the mpu_simulator library. It ensures that 
 
 This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found in https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc, that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found in https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py, which calls the custom TensorFlow conv2d operator in the background.
 
-### Usage of the Tensorpack operator
-
-The custom Tensorpack operator MpuSimConv2D
-
 ### mpusim_fc
 
 This project implements the C++ implementation of a Tensorflow matrix multiplication layer, based on the TensorFlow operator MatMulOp https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc.
 
-### Usage of the Tensorpack operator
+## Usage of the Tensorpack operators
+
+The custom Tensorpack operators have some additional parameters compared to the standard Tensorpack operators which are used to control the MPU parameters and logging of execution metrics. These are described in the following.
+
+| Parameter                         | Description                                       | Options               |
+| --------------------------------- | ------------------------------------------------- | --------------------- |
+| `activations_datatype_size_byte`  | Activation datatype size in byte                  | 8, 16, 32, 64         |
+| `weights_datatype_size_byte`      | Weight datatype size in byte                      | 8, 16, 32, 64         |
+| `results_datatype_size_byte`      | Accumulator/result datatype size in byte          | 8, 16, 32, 64         |
+| `systolic_array_height`           | Systolic array height                             | int >= 2              |
+| `systolic_array_width`            | Systolic array width                              | int >= 2              |
+| `activation_fifo_depth`           | Activation FIFO depth                             | int >= 4              |
+| `accumulator_array_height`        | Accumulator array height                          | int >= 4              |
+| `log_file_output_dir`             | Directory to which the log file will be written   | Any valid directory   |
+| `model_name`                      | Name of the current model                         | Any valid filename    |
+
