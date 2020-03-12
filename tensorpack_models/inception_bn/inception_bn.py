@@ -23,9 +23,9 @@ from tensorpack.dataflow import dataset
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.utils.gpu import get_num_gpu
 
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
+sys.path.append('../../mpusim_conv2d/')
+sys.path.append('../../mpusim_fc/')
+sys.path.append('..')
 
 from imagenet_utils import fbresnet_augmentor, get_imagenet_dataflow, ImageNetModel
 
@@ -109,9 +109,7 @@ class Model(ImageNetModel):
                                             systolic_array_width=self.systolic_array_width,
                                             activation_fifo_depth=8,
                                             accumulator_array_height=self.accumulator_array_height,
-                                            log_file_output_dir=("/home/kstehle/masters_thesis/"
-                                                                    "tensorpack_models_mpusim/inception_bn/"
-                                                                    "mpu_log/width_height_sweep_constant_pe_count/"),
+                                            log_file_output_dir=("mpu_log/width_height_sweep_constant_pe_count/"),
                                             model_name='inception_bn_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(self.systolic_array_height,
                                                                                                                 self.systolic_array_width, 
                                                                                                                 self.accumulator_array_height)):

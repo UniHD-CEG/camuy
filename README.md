@@ -159,11 +159,13 @@ with argscope([MpuSimConv2D, MpuSimFullyConnected],
                         log_file_output_dir=("log_file_directory"),
                         model_name='model_name'):
         
-    l = MpuSimConv2D('conv1', image, filters=96, kernel_size=11, strides=4, padding='VALID')
-    l = MpuSimFullyConnected('fc8', l, 1000)
+    l = MpuSimConv2D('conv', image, filters=96, kernel_size=11, strides=4, padding='VALID')
+    l = MpuSimFullyConnected('fc', l, 1000)
 ```
 
 As seen in this example, using the `argscope` functionality, the custom Tensorpack operators can essentially function as drop in replacements for their default Tensorpack operator counterparts.
 The resulting log file of the performed matrix multiplications in a model is written to the filesystem when execution of the model script has finished and the mpusim_wrapper object is deleted.
 
 ## Example models
+
+TODO: Add example model description
