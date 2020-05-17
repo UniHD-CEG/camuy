@@ -51,7 +51,7 @@ from tensorflow.python.util.tf_export import tf_export
 from tensorflow.python.layers import base
 from tensorflow.python.ops import init_ops
 
-mpu_sim_mat_mul_lib = tf.load_op_library('../../build_mpusim_mat_mul_release/mpusim-mat-mul.so')
+mpu_sim_mat_mul_lib = tf.load_op_library('../../bin/build_mpusim_mat_mul_release/mpusim-mat-mul.so')
 
 class MpuSimFcBase(Layer):
     

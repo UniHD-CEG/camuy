@@ -43,7 +43,7 @@ project(mpusim-conv2d)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../tensorflow -D_GLIBCXX_USE_CXX11_ABI=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../../third_party/tensorflow_op_build_dependencies -D_GLIBCXX_USE_CXX11_ABI=1")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ltensorflow_framework")
 
