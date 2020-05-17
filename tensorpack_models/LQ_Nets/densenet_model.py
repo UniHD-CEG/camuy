@@ -71,9 +71,7 @@ def densenet_backbone(image,
                         systolic_array_width=systolic_array_width,
                         activation_fifo_depth=8,
                         accumulator_array_height=accumulator_array_height,
-                        log_file_output_dir=("/home/kstehle/masters_thesis/"
-                                                "tensorpack_models_mpusim/LQ_Nets/"
-                                                "mpu_log/densenet_264/width_height_sweep_constant_pe_count"),
+                        log_file_output_dir=("mpu_log/densenet_264/width_height_sweep"),
                         model_name='densenet_264_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(systolic_array_height,
                                                                                                 systolic_array_width, 
                                                                                                 accumulator_array_height)):

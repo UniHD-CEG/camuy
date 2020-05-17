@@ -34,7 +34,7 @@ from tensorpack.utils.argtools import get_data_format, shape2d, shape4d, log_onc
 from tensorpack.models.common import VariableHolder, layer_register
 from tensorpack.models.tflayer import convert_to_tflayer_args, rename_get_variable
 
-mpu_sim_conv2d_lib = tf.load_op_library('/home/kstehle/masters_thesis/build_mpusim_conv2d_release/mpusim-conv2d.so')
+mpu_sim_conv2d_lib = tf.load_op_library('../../bin/build_mpusim_conv2d_release/mpusim-conv2d.so')
 
 __all__ = ['MpuSimConv2D']
 

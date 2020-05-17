@@ -21,8 +21,8 @@ session_conf = tf.ConfigProto(
       inter_op_parallelism_threads=1)
 sess = tf.Session(config=session_conf)
 
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
+sys.path.append('../../mpusim_conv2d/')
+sys.path.append('../../mpusim_fc/')
 
 from MpuSimConv2D_gradient import *
 from MpuSimConv2D import *

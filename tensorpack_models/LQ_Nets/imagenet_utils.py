@@ -20,7 +20,6 @@ from tensorpack.utils.stats import RatioCounter
 
 DEFAULT_IMAGE_SHAPE = 224
 
-
 class GoogleNetResize(imgaug.ImageAugmentor):
     """
     crop 8%~100% of the original image
