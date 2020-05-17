@@ -1,3 +1,5 @@
+bin/
+third_party/build_eigen3_release/
 **/train_log/
 **/latex/
 **/html/
