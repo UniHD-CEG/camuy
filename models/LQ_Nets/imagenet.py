@@ -21,14 +21,13 @@ session_conf = tf.ConfigProto(
       inter_op_parallelism_threads=1)
 sess = tf.Session(config=session_conf)
 
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
+sys.path.append('../..')
 
-from MpuSimConv2D_gradient import *
-from MpuSimConv2D import *
+from mpusim_conv2d.mpusim_conv2d_gradient import *
+from mpusim_conv2d.mpusim_conv2d import *
 
-from MpuSimMatMul_gradient import *
-from MpuSimFullyConnected import *
+from mpusim_fc.mpusim_mat_mul_gradient import *
+from mpusim_fc.mpusim_fully_connected import *
 
 import imagenet_utils
 from densenet_model import densenet_backbone
@@ -56,7 +55,8 @@ class Model(ImageNetModel):
                     results_datatype_size_byte=4,
                     systolic_array_height=256,
                     systolic_array_width=256,
-                    accumulator_array_height=4096):
+                    accumulator_array_height=4096,
+                    mpusim_logdir=''):
         super(Model, self).__init__('NHWC', 5e-5, 0.1, True, double_iter=False)
 
         self.mode=mode
@@ -68,6 +68,8 @@ class Model(ImageNetModel):
         self.systolic_array_height=systolic_array_height
         self.systolic_array_width=systolic_array_width
         self.accumulator_array_height=accumulator_array_height
+        
+        self.mpusim_logdir=mpusim_logdir
         
         if mode == 'vgg' or mode == 'alexnet' or mode == 'googlenet' or mode == 'densenet':
             return
@@ -85,23 +87,16 @@ class Model(ImageNetModel):
         }[resnet_depth]
 
     def build_graph(self, image, label):
-        with argscope([MpuSimConv2D, MaxPooling, AvgPooling, GlobalAvgPooling, BatchNorm], data_format=self.data_format):
-            if self.mode == 'alexnet':
-                l =  alexnet_backbone(image,
-                                        self.activations_datatype_size_byte,
-                                        self.weights_datatype_size_byte,
-                                        self.results_datatype_size_byte,
-                                        self.systolic_array_height,
-                                        self.systolic_array_width,
-                                        self.accumulator_array_height)
-            elif self.mode == 'googlenet':
+        with argscope([mpusim_conv2d, MaxPooling, AvgPooling, GlobalAvgPooling, BatchNorm], data_format=self.data_format):
+            if self.mode == 'googlenet':
                 l =  googlenet_backbone(image,
                                         self.activations_datatype_size_byte,
                                         self.weights_datatype_size_byte,
                                         self.results_datatype_size_byte,
                                         self.systolic_array_height,
                                         self.systolic_array_width,
-                                        self.accumulator_array_height)
+                                        self.accumulator_array_height,
+                                        self.mpusim_logdir)
             elif self.mode == 'densenet':
                 l =  densenet_backbone(image,
                                         self.activations_datatype_size_byte,
@@ -109,7 +104,8 @@ class Model(ImageNetModel):
                                         self.results_datatype_size_byte,
                                         self.systolic_array_height,
                                         self.systolic_array_width,
-                                        self.accumulator_array_height)
+                                        self.accumulator_array_height,
+                                        self.mpusim_logdir)
             else:
                 group_func = resnet_group
                 l = resnet_backbone(image,
@@ -122,7 +118,8 @@ class Model(ImageNetModel):
                                         self.results_datatype_size_byte,
                                         self.systolic_array_height,
                                         self.systolic_array_width,
-                                        self.accumulator_array_height)
+                                        self.accumulator_array_height,
+                                        self.mpusim_logdir)
             
             tf.nn.softmax(l, name='output')
             loss3 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=l, labels=label)
@@ -152,7 +149,7 @@ def get_config(model):
 
     logger.info("For benchmark, batch size is fixed to 1 per tower.")
     data = QueueInput(FakeData(
-            [[1, 224, 224, 3], [1]], 1000, random=False, dtype='uint8'))
+            [[1, 224, 224, 3], [1]], 1, random=False, dtype='uint8'))
 
     return TrainConfig(
                 model=model,
@@ -161,16 +158,13 @@ def get_config(model):
                 steps_per_epoch=1,
                 max_epoch=1)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--resnet-depth', help='resnet depth',
                         type=int, default=18, choices=[18, 34, 50, 101, 152])
-    parser.add_argument('--mode', choices=['resnet', 'alexnet', 'googlenet', 'densenet'],
+    parser.add_argument('--mode', choices=['resnet', 'googlenet', 'densenet'],
                         help='Type of model used for ',
                         default='resnet')
-    parser.add_argument('--logdir-id', help='identify of logdir',
-                        type=str, default='')
     parser.add_argument('--activations-datatype-size-byte',
                             help='activations datatype size in byte',
                             type=int, default=1)
@@ -189,6 +183,10 @@ if __name__ == '__main__':
     parser.add_argument('--accumulator-array-height',
                             help='accumulator array height',
                             type=int, default=4096)
+    parser.add_argument('--tensorpack-logdir-id', help='TensorPack training log directory id',
+                            type=str, default='')
+    parser.add_argument('--mpusim-logdir', help='MPU simulator log directory',
+                            type=str, default='.')
     args = parser.parse_args()
     
     imagenet_utils.DEFAULT_IMAGE_SHAPE = 224
@@ -200,9 +198,10 @@ if __name__ == '__main__':
                     args.results_datatype_size_byte,
                     args.systolic_array_height,
                     args.systolic_array_width,
-                    args.accumulator_array_height)
+                    args.accumulator_array_height,
+                    args.mpusim_logdir)
 
-    logger.set_logger_dir(os.path.join('train_log', 'imagenet' + args.logdir_id))
+    logger.set_logger_dir(os.path.join('train_log', 'imagenet' + args.tensorpack_logdir_id))
 
     config = get_config(model)
     launch_train_with_config(config, SimpleTrainer())

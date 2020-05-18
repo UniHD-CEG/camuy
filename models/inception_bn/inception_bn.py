@@ -23,17 +23,15 @@ from tensorpack.dataflow import dataset
 from tensorpack.tfutils.summary import add_moving_summary
 from tensorpack.utils.gpu import get_num_gpu
 
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
+sys.path.append('../..')
 
-from imagenet_utils import fbresnet_augmentor, get_imagenet_dataflow, ImageNetModel
+from mpusim_conv2d.mpusim_conv2d_gradient import *
+from mpusim_conv2d.mpusim_conv2d import *
 
-from MpuSimConv2D_gradient import *
-from MpuSimConv2D import *
+from mpusim_fc.mpusim_mat_mul_gradient import *
+from mpusim_fc.mpusim_fully_connected import *
 
-from MpuSimMatMul_gradient import *
-from MpuSimFullyConnected import *
+from models.imagenet_utils import fbresnet_augmentor, get_imagenet_dataflow, ImageNetModel
 
 session_conf = tf.ConfigProto(
       intra_op_parallelism_threads=1,
@@ -53,7 +51,8 @@ class Model(ImageNetModel):
                     results_datatype_size_byte=4,
                     systolic_array_height=256,
                     systolic_array_width=256,
-                    accumulator_array_height=4096):
+                    accumulator_array_height=4096,
+                    mpusim_logdir=''):
         super(Model, self).__init__(data_format, wd)
 
         self.activations_datatype_size_byte=activations_datatype_size_byte
@@ -62,6 +61,8 @@ class Model(ImageNetModel):
         self.systolic_array_height=systolic_array_height
         self.systolic_array_width=systolic_array_width
         self.accumulator_array_height=accumulator_array_height
+        
+        self.mpusim_logdir=mpusim_logdir
 
     def inputs(self):
         return [tf.TensorSpec([None, INPUT_SHAPE, INPUT_SHAPE, 3], tf.float32, 'input'),
@@ -75,13 +76,13 @@ class Model(ImageNetModel):
             with tf.variable_scope(name):
                 outs = []
                 if nr1x1 != 0:
-                    outs.append(MpuSimConv2D('conv1x1', x, nr1x1, 1))
-                x2 = MpuSimConv2D('conv3x3r', x, nr3x3r, 1)
-                outs.append(MpuSimConv2D('conv3x3', x2, nr3x3, 3, strides=stride))
+                    outs.append(mpusim_conv2d('conv1x1', x, nr1x1, 1))
+                x2 = mpusim_conv2d('conv3x3r', x, nr3x3r, 1)
+                outs.append(mpusim_conv2d('conv3x3', x2, nr3x3, 3, strides=stride))
 
-                x3 = MpuSimConv2D('conv233r', x, nr233r, 1)
-                x3 = MpuSimConv2D('conv233a', x3, nr233, 3)
-                outs.append(MpuSimConv2D('conv233b', x3, nr233, 3, strides=stride))
+                x3 = mpusim_conv2d('conv233r', x, nr233r, 1)
+                x3 = mpusim_conv2d('conv233a', x3, nr233, 3)
+                outs.append(mpusim_conv2d('conv233b', x3, nr233, 3, strides=stride))
 
                 if pooltype == 'max':
                     x4 = MaxPooling('mpool', x, 3, stride, padding='SAME')
@@ -89,17 +90,17 @@ class Model(ImageNetModel):
                     assert pooltype == 'avg'
                     x4 = AvgPooling('apool', x, 3, stride, padding='SAME')
                 if nrpool != 0:  # pool + passthrough if nrpool == 0
-                    x4 = MpuSimConv2D('poolproj', x4, nrpool, 1)
+                    x4 = mpusim_conv2d('poolproj', x4, nrpool, 1)
                 outs.append(x4)
                 return tf.concat(outs, 3, name='concat')
             
         constant_init = tf.constant_initializer(1)
 
-        with argscope(MpuSimConv2D,
+        with argscope(mpusim_conv2d,
                         activation=BNReLU,
                         use_bias=False,
                         data_format=self.data_format), \
-                argscope([MpuSimConv2D, MpuSimFullyConnected],
+                argscope([mpusim_conv2d, mpusim_fully_connected],
                                             activation=tf.nn.relu,
                                             kernel_initializer=constant_init,
                                             activations_datatype_size_byte=self.activations_datatype_size_byte, 
@@ -109,16 +110,14 @@ class Model(ImageNetModel):
                                             systolic_array_width=self.systolic_array_width,
                                             activation_fifo_depth=8,
                                             accumulator_array_height=self.accumulator_array_height,
-                                            log_file_output_dir=("/home/kstehle/masters_thesis/"
-                                                                    "tensorpack_models_mpusim/inception_bn/"
-                                                                    "mpu_log/width_height_sweep_constant_pe_count/"),
+                                            log_file_output_dir=self.mpusim_logdir,
                                             model_name='inception_bn_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(self.systolic_array_height,
                                                                                                                 self.systolic_array_width, 
                                                                                                                 self.accumulator_array_height)):
-            l = MpuSimConv2D('conv0', image, 64, 7, strides=2)
+            l = mpusim_conv2d('conv0', image, 64, 7, strides=2)
             l = MaxPooling('pool0', l, 3, 2, padding='SAME')
-            l = MpuSimConv2D('conv1', l, 64, 1)
-            l = MpuSimConv2D('conv2', l, 192, 3)
+            l = mpusim_conv2d('conv1', l, 64, 1)
+            l = mpusim_conv2d('conv2', l, 192, 3)
             l = MaxPooling('pool2', l, 3, 2, padding='SAME')
             # 28
             l = inception('incep3a', l, 64, 64, 64, 64, 96, 32, 'avg')
@@ -137,7 +136,7 @@ class Model(ImageNetModel):
             l = inception('incep5b', l, 352, 192, 320, 192, 224, 128, 'max')
             l = GlobalAvgPooling('gap', l)
 
-            logits = MpuSimFullyConnected('linear', l, 1000, activation=tf.identity)
+            logits = mpusim_fully_connected('linear', l, 1000, activation=tf.identity)
         tf.nn.softmax(logits, name='output')
         
         loss3 = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=label)
@@ -179,10 +178,11 @@ def get_config(activations_datatype_size_byte,
                 results_datatype_size_byte,
                 systolic_array_height,
                 systolic_array_width,
-                accumulator_array_height):
+                accumulator_array_height,
+                mpusim_logdir):
 
     data = QueueInput(FakeData(
-            [[1, 224, 224, 3], [1]], 1000, random=False, dtype='uint8'))
+            [[1, 224, 224, 3], [1]], 1, random=False, dtype='uint8'))
 
     return TrainConfig(
                 model=Model(
@@ -191,7 +191,8 @@ def get_config(activations_datatype_size_byte,
                         results_datatype_size_byte=results_datatype_size_byte,
                         systolic_array_height=systolic_array_height,
                         systolic_array_width=systolic_array_width,
-                        accumulator_array_height=accumulator_array_height),
+                        accumulator_array_height=accumulator_array_height,
+                        mpusim_logdir=mpusim_logdir),
                 data=data,
                 callbacks=[],
                 steps_per_epoch=1,
@@ -218,18 +219,21 @@ if __name__ == '__main__':
     parser.add_argument('--accumulator-array-height',
                             help='accumulator array height',
                             type=int, default=4096)
-    parser.add_argument('--logdir-id', help='identify of logdir',
+    parser.add_argument('--tensorpack-logdir-id', help='TensorPack training log directory id',
                             type=str, default='')
+    parser.add_argument('--mpusim-logdir', help='MPU simulator log directory',
+                            type=str, default='.')
     args = parser.parse_args()
 
 
-    logger.set_logger_dir(os.path.join('train_log', 'inception_bn' + args.logdir_id))
+    logger.set_logger_dir(os.path.join('train_log', 'inception_bn' + args.tensorpack_logdir_id))
     
     config = get_config(args.activations_datatype_size_byte,
                         args.weights_datatype_size_byte,
                         args.results_datatype_size_byte,
                         args.systolic_array_height,
                         args.systolic_array_width,
-                        args.accumulator_array_height)
+                        args.accumulator_array_height,
+                        args.mpusim_logdir)
 
     launch_train_with_config(config, SimpleTrainer()) 

@@ -20,9 +20,9 @@ from tensorpack.tfutils.common import get_tf_version_tuple
 from tensorpack.models.common import VariableHolder, layer_register
 from tensorpack.models.tflayer import convert_to_tflayer_args, rename_get_variable
 
-from MpuSimFc import *
+from .mpusim_fc import *
 
-__all__ = ['MpuSimFullyConnected']
+__all__ = ['mpusim_fully_connected']
 def batch_flatten(x):
     """
     Flatten the tensor except the first dimension.
@@ -37,7 +37,7 @@ def batch_flatten(x):
 @convert_to_tflayer_args(
     args_names=['units'],
     name_mapping={'out_dim': 'units'})
-def MpuSimFullyConnected(inputs,
+def mpusim_fully_connected(inputs,
                             units,
                             activation=None,
                             use_bias=True,
@@ -56,7 +56,7 @@ def MpuSimFullyConnected(inputs,
                             log_file_output_dir='',
                             model_name=''):
     """
-    A wrapper around `MpuSimFc`.
+    A wrapper around `mpusim_fc`.
     One difference to maintain backward-compatibility:
     Default weight initializer is variance_scaling_initializer(2.0).
     Variable Names:
@@ -71,7 +71,7 @@ def MpuSimFullyConnected(inputs,
 
     inputs = batch_flatten(inputs)
     with rename_get_variable({'kernel': 'W', 'bias': 'b'}):
-        layer = MpuSimFc(
+        layer = mpusim_fc(
             units=units,
             activation=activation,
             use_bias=use_bias,

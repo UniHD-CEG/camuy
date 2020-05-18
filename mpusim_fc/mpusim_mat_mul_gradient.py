@@ -33,7 +33,7 @@ from tensorflow.python.ops import math_ops
 
 @ops.RegisterGradient("MpuSimMatMul")
 def _MpuSimMatMulGrad(op, grad):
-    """Gradient for MatMul."""
+    """Gradient for MpuSimMatMul."""
     try:
         skip_input_indices = op.skip_input_indices
         if skip_input_indices is not None:

@@ -12,17 +12,15 @@ from tensorpack.tfutils import argscope
 from tensorpack.tfutils.summary import *
 from tensorpack.utils.gpu import get_num_gpu
 
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
-sys.path.append(os.path.abspath(""))
+sys.path.append('../..')
 
-from MpuSimConv2D_gradient import *
-from MpuSimConv2D import *
+from mpusim_conv2d.mpusim_conv2d_gradient import *
+from mpusim_conv2d.mpusim_conv2d import *
 
-from MpuSimMatMul_gradient import *
-from MpuSimFullyConnected import *
+from mpusim_fc.mpusim_mat_mul_gradient import *
+from mpusim_fc.mpusim_fully_connected import *
 
-from imagenet_utils import ImageNetModel, fbresnet_augmentor, get_imagenet_dataflow
+from models.imagenet_utils import ImageNetModel, fbresnet_augmentor, get_imagenet_dataflow
 
 session_conf = tf.ConfigProto(
       intra_op_parallelism_threads=1,
@@ -31,7 +29,7 @@ sess = tf.Session(config=session_conf)
 
 
 def convnormrelu(x, name, chan):
-    x = MpuSimConv2D(name, x, chan, 3)
+    x = mpusim_conv2d(name, x, chan, 3)
     x = BatchNorm(name + '_bn', x)
     x = tf.nn.relu(x, name=name + '_relu')
     return x
@@ -48,7 +46,8 @@ class Model(ImageNetModel):
                 results_datatype_size_byte=4,
                 systolic_array_height=256,
                 systolic_array_width=256,
-                accumulator_array_height=4096):
+                accumulator_array_height=4096,
+                mpusim_logdir=''):
         super(Model, self).__init__(data_format, wd)
 
         self.activations_datatype_size_byte=activations_datatype_size_byte
@@ -58,11 +57,13 @@ class Model(ImageNetModel):
         self.systolic_array_width=systolic_array_width
         self.accumulator_array_height=accumulator_array_height
 
+        self.mpusim_logdir=mpusim_logdir
+
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
-        with argscope(MpuSimConv2D, kernel_initializer=constant_init), \
-                argscope([MpuSimConv2D, MaxPooling, BatchNorm], data_format='NHWC'), \
-                argscope([MpuSimConv2D, MpuSimFullyConnected],
+        with argscope(mpusim_conv2d, kernel_initializer=constant_init), \
+                argscope([mpusim_conv2d, MaxPooling, BatchNorm], data_format='NHWC'), \
+                argscope([mpusim_conv2d, mpusim_fully_connected],
                                             kernel_initializer=constant_init,
                                             activations_datatype_size_byte=self.activations_datatype_size_byte, 
                                             weights_datatype_size_byte=self.weights_datatype_size_byte,
@@ -71,9 +72,7 @@ class Model(ImageNetModel):
                                             systolic_array_width=self.systolic_array_width,
                                             activation_fifo_depth=8,
                                             accumulator_array_height=self.accumulator_array_height,
-                                            log_file_output_dir=("/home/kstehle/masters_thesis/"
-                                                                    "tensorpack_models_mpusim/vgg16/"
-                                                                    "mpu_log/width_height_sweep_constant_pe_count/"),
+                                            log_file_output_dir=self.mpusim_logdir,
                                             model_name='vgg16_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(self.systolic_array_height,
                                                                                                                 self.systolic_array_width, 
                                                                                                                 self.accumulator_array_height)):
@@ -101,11 +100,11 @@ class Model(ImageNetModel):
                       .apply(convnormrelu, 'conv5_3', 512)
                       .MaxPooling('pool5', 2)
                       ## 7
-                      .MpuSimFullyConnected('fc6', 4096)
+                      .mpusim_fully_connected('fc6', 4096)
                       .tf.nn.relu(name='fc6_relu')
-                      .MpuSimFullyConnected('fc7', 4096)
+                      .mpusim_fully_connected('fc7', 4096)
                       .tf.nn.relu(name='fc7_relu')
-                      .MpuSimFullyConnected('fc8', 1000)())
+                      .mpusim_fully_connected('fc8', 1000)())
         add_param_summary(('.*', ['histogram', 'rms']))
         return logits
 
@@ -115,7 +114,8 @@ def get_config(activations_datatype_size_byte,
                 results_datatype_size_byte,
                 systolic_array_height,
                 systolic_array_width,
-                accumulator_array_height):
+                accumulator_array_height,
+                mpusim_logdir):
     
     nr_tower = max(get_num_gpu(), 1)
     BASE_LR = 0.01 * (1. / 256.)
@@ -136,7 +136,8 @@ def get_config(activations_datatype_size_byte,
                             results_datatype_size_byte=results_datatype_size_byte,
                             systolic_array_height=systolic_array_height,
                             systolic_array_width=systolic_array_width,
-                            accumulator_array_height=accumulator_array_height),
+                            accumulator_array_height=accumulator_array_height,
+                            mpusim_logdir=mpusim_logdir),
                     data=data,
                     callbacks=callbacks,
                     steps_per_epoch=1,
@@ -163,17 +164,20 @@ if __name__ == '__main__':
     parser.add_argument('--accumulator-array-height',
                             help='accumulator array height',
                             type=int, default=4096)
-    parser.add_argument('--logdir-id', help='identify of logdir',
+    parser.add_argument('--tensorpack-logdir-id', help='TensorPack training log directory id',
                             type=str, default='')
+    parser.add_argument('--mpusim-logdir', help='MPU simulator log directory',
+                            type=str, default='.')
     args = parser.parse_args()
 
-    logger.set_logger_dir(os.path.join('train_log', 'vgg16' + args.logdir_id))
+    logger.set_logger_dir(os.path.join('train_log', 'vgg16' + args.tensorpack_logdir_id))
 
     config = get_config(args.activations_datatype_size_byte,
                                 args.weights_datatype_size_byte,
                                 args.results_datatype_size_byte,
                                 args.systolic_array_height,
                                 args.systolic_array_width,
-                                args.accumulator_array_height)
+                                args.accumulator_array_height,
+                                args.mpusim_logdir)
     
     launch_train_with_config(config, SimpleTrainer()) 

@@ -7,8 +7,8 @@ from tensorflow.contrib.layers import variance_scaling_initializer
 from tensorpack.models import *
 from tensorpack.tfutils.argscope import argscope, get_arg_scope
 
-from MpuSimConv2D import *
-from MpuSimFullyConnected import *
+from mpusim_conv2d.mpusim_conv2d import *
+from mpusim_fc.mpusim_fully_connected import *
 
 def resnet_shortcut(l, n_out, stride, activation=tf.identity, block_type='B'):
     data_format = 'NHWC'
@@ -17,7 +17,7 @@ def resnet_shortcut(l, n_out, stride, activation=tf.identity, block_type='B'):
     # Change dimension when channel is not the same
     if n_in != n_out:
         if block_type == 'B':
-            return MpuSimConv2D('convshortcut', l, n_out, 1, stride=stride, activation=activation)
+            return mpusim_conv2d('convshortcut', l, n_out, 1, stride=stride, activation=activation)
         else:
             l = AvgPooling('poolshortcut', l, stride, stride, padding='VALID')
             l = tf.pad(l, [[0, 0], [0, 0], [0, 0], [0, n_out - n_in]], 'CONSTANT')
@@ -42,17 +42,17 @@ def apply_preactivation(l, preact, block_func):
 
 def preresnet_basicblock(l, ch_out, stride, preact, block_type='B'):
     l, shortcut = apply_preactivation(l, preact, 'basic')
-    l = MpuSimConv2D('conv1', l, ch_out, 3, stride=stride, activation=BNReLU)
-    l = MpuSimConv2D('conv2', l, ch_out, 3, activation=BNReLU)
+    l = mpusim_conv2d('conv1', l, ch_out, 3, stride=stride, activation=BNReLU)
+    l = mpusim_conv2d('conv2', l, ch_out, 3, activation=BNReLU)
     return l + resnet_shortcut(shortcut, ch_out, stride, activation=BNReLU, block_type=block_type)
 
 
 def preresnet_bottleneck(l, ch_out, stride, preact, block_type='A'):
     # Stride is applied on the second conv, following fb.resnet.torch
     l, shortcut = apply_preactivation(l, preact, 'basic')
-    l = MpuSimConv2D('conv1', l, ch_out, 1, activation=BNReLU)
-    l = MpuSimConv2D('conv2', l, ch_out, 3, stride=stride, activation=BNReLU)
-    l = MpuSimConv2D('conv3', l, ch_out*4, 1, activation=BNReLU)
+    l = mpusim_conv2d('conv1', l, ch_out, 1, activation=BNReLU)
+    l = mpusim_conv2d('conv2', l, ch_out, 3, stride=stride, activation=BNReLU)
+    l = mpusim_conv2d('conv3', l, ch_out*4, 1, activation=BNReLU)
     return l + resnet_shortcut(shortcut, ch_out*4, stride, activation=BNReLU, block_type=block_type)
 
 
@@ -96,8 +96,8 @@ def preresnet_group_typeA(l, name, block_func, features, count, stride, is_last=
 
 def resnet_basicblock(l, ch_out, stride):
     shortcut = l
-    l = MpuSimConv2D('conv1', l, ch_out, 3, stride=stride, activation=BNReLU)
-    l = MpuSimConv2D('conv2', l, ch_out, 3, activation=BNReLU)
+    l = mpusim_conv2d('conv1', l, ch_out, 3, stride=stride, activation=BNReLU)
+    l = mpusim_conv2d('conv2', l, ch_out, 3, activation=BNReLU)
     return l + resnet_shortcut(shortcut, ch_out, stride, activation=BNReLU)
 
 
@@ -106,9 +106,9 @@ def resnet_bottleneck(l, ch_out, stride, stride_first=False):
     stride_first: Original resnet put stride on first conv. fb.resnet.torch put stride on second conv.
     """
     shortcut = l
-    l = MpuSimConv2D('conv1', l, ch_out, 1, stride=stride if stride_first else 1, activation=BNReLU)
-    l = MpuSimConv2D('conv2', l, ch_out, 3, stride=1 if stride_first else stride, activation=BNReLU)
-    l = MpuSimConv2D('conv3', l, ch_out*4, 1, activation=BNReLU)
+    l = mpusim_conv2d('conv1', l, ch_out, 1, stride=stride if stride_first else 1, activation=BNReLU)
+    l = mpusim_conv2d('conv2', l, ch_out, 3, stride=1 if stride_first else stride, activation=BNReLU)
+    l = mpusim_conv2d('conv3', l, ch_out*4, 1, activation=BNReLU)
     return l + resnet_shortcut(shortcut, ch_out*4, stride, activation=BNReLU)
 
 
@@ -132,11 +132,12 @@ def resnet_backbone(image,
                         results_datatype_size_byte,
                         systolic_array_height,
                         systolic_array_width,
-                        accumulator_array_height):
+                        accumulator_array_height,
+                        mpusim_logdir):
     
     constant_init = tf.constant_initializer(1)
-    with argscope(MpuSimConv2D, data_format='NHWC'), \
-            argscope([MpuSimConv2D, MpuSimFullyConnected],
+    with argscope(mpusim_conv2d, data_format='NHWC'), \
+            argscope([mpusim_conv2d, mpusim_fully_connected],
                                     activation=tf.identity,
                                     use_bias=False,
                                     kernel_initializer=constant_init,
@@ -147,19 +148,17 @@ def resnet_backbone(image,
                                     systolic_array_width=systolic_array_width,
                                     activation_fifo_depth=8,
                                     accumulator_array_height=accumulator_array_height,
-                                    log_file_output_dir=("/home/kstehle/masters_thesis/"
-                                                            "tensorpack_models_mpusim/LQ_Nets/mpu_log/"
-                                                            "resnet_{}/width_height_sweep_constant_pe_count".format(resnet_depth)),
+                                    log_file_output_dir=mpusim_logdir,
                                     model_name='resnet_{}_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(resnet_depth,
                                                                                                             systolic_array_height,
                                                                                                             systolic_array_width, 
                                                                                                             accumulator_array_height)):
 
-        l = MpuSimConv2D('conv0', image, 64, 7, stride=2, activation=BNReLU)
+        l = mpusim_conv2d('conv0', image, 64, 7, stride=2, activation=BNReLU)
         l = MaxPooling('pool0', l, shape=3, stride=2, padding='SAME')
         l = group_func(l, 'group0', block_func, 64, num_blocks[0], 1)
         l = group_func(l, 'group1', block_func, 128, num_blocks[1], 2)
         l = group_func(l, 'group2', block_func, 256, num_blocks[2], 2)
         l = group_func(l, 'group3', block_func, 512, num_blocks[3], 2, is_last=True)
         l = GlobalAvgPooling('gap', l)
-        return MpuSimFullyConnected('linear', l, 1000)
+        return mpusim_fully_connected('linear', l, 1000)

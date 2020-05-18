@@ -53,7 +53,7 @@ from tensorflow.python.ops import init_ops
 
 mpu_sim_mat_mul_lib = tf.load_op_library('../../bin/build_mpusim_mat_mul_release/mpusim-mat-mul.so')
 
-class MpuSimFcBase(Layer):
+class mpusim_fc_base(Layer):
     
     def __init__(self,
                     units,
@@ -79,7 +79,7 @@ class MpuSimFcBase(Layer):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
 
-        super(MpuSimFcBase, self).__init__(
+        super(mpusim_fc_base, self).__init__(
             activity_regularizer=regularizers.get(activity_regularizer), **kwargs)
         self.units = int(units)
         self.activation = activations.get(activation)
@@ -107,7 +107,7 @@ class MpuSimFcBase(Layer):
     def build(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape)
         if tensor_shape.dimension_value(input_shape[-1]) is None:
-            raise ValueError('The last dimension of the inputs to `MpuSimFcBase` '
+            raise ValueError('The last dimension of the inputs to `mpusim_fc_base` '
                             'should be defined. Found `None`.')
         last_dim = tensor_shape.dimension_value(input_shape[-1])
         self.input_spec = InputSpec(min_ndim=2,
@@ -137,7 +137,7 @@ class MpuSimFcBase(Layer):
         inputs = ops.convert_to_tensor(inputs)
         rank = common_shapes.rank(inputs)
         if rank > 2:
-            raise ValueError('MpuSimFcBase only supports tensors of rank <= 2')
+            raise ValueError('mpusim_fc_base only supports tensors of rank <= 2')
         else:
             
             outputs = mpu_sim_mat_mul_lib.mpu_sim_mat_mul(inputs,
@@ -181,10 +181,10 @@ def get_config(self):
         'kernel_constraint': constraints.serialize(self.kernel_constraint),
         'bias_constraint': constraints.serialize(self.bias_constraint)
     }
-    base_config = super(MpuSimFcBase, self).get_config()
+    base_config = super(mpusim_fc_base, self).get_config()
     return dict(list(base_config.items()) + list(config.items()))
 
-class MpuSimFc(MpuSimFcBase, base.Layer):
+class mpusim_fc(mpusim_fc_base, base.Layer):
     
     def __init__(self, 
                     units,
@@ -200,7 +200,7 @@ class MpuSimFc(MpuSimFcBase, base.Layer):
                     trainable=True,
                     name=None,
                     **kwargs):
-        super(MpuSimFc, self).__init__(units=units,
+        super(mpusim_fc, self).__init__(units=units,
                                         activation=activation,
                                         use_bias=use_bias,
                                         kernel_initializer=kernel_initializer,

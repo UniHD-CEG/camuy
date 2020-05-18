@@ -36,7 +36,7 @@ from tensorpack.models.tflayer import convert_to_tflayer_args, rename_get_variab
 
 mpu_sim_conv2d_lib = tf.load_op_library('../../bin/build_mpusim_conv2d_release/mpusim-conv2d.so')
 
-__all__ = ['MpuSimConv2D']
+__all__ = ['mpusim_conv2d']
 
 @layer_register(log_shape=True)
 @convert_to_tflayer_args(
@@ -46,7 +46,7 @@ __all__ = ['MpuSimConv2D']
         'kernel_shape': 'kernel_size',
         'stride': 'strides',
     })
-def MpuSimConv2D(
+def mpusim_conv2d(
         inputs,
         filters,
         kernel_size,
@@ -95,7 +95,7 @@ def MpuSimConv2D(
     in_shape = inputs.get_shape().as_list()
     channel_axis = 3 if data_format == 'NHWC' else 1
     in_channel = in_shape[channel_axis]
-    assert in_channel is not None, "[MpuSimConv2D] Input cannot have unknown channel!"
+    assert in_channel is not None, "[mpusim_conv2d] Input cannot have unknown channel!"
     assert in_channel % split == 0
 
     assert kernel_regularizer is None and bias_regularizer is None and activity_regularizer is None, \
