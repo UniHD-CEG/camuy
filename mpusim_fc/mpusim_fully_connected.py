@@ -71,29 +71,29 @@ def mpusim_fully_connected(inputs,
 
     inputs = batch_flatten(inputs)
     with rename_get_variable({'kernel': 'W', 'bias': 'b'}):
-        layer = mpusim_fc(
-            units=units,
-            activation=activation,
-            use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            activations_datatype_size_byte=activations_datatype_size_byte,
-            weights_datatype_size_byte=weights_datatype_size_byte,
-            results_datatype_size_byte=results_datatype_size_byte,
-            systolic_array_height=systolic_array_height,
-            systolic_array_width=systolic_array_width,
-            activation_fifo_depth=activation_fifo_depth,
-            accumulator_array_height=accumulator_array_height,
-            log_file_output_dir=log_file_output_dir,
-            model_name=model_name,
-            _reuse=tf.get_variable_scope().reuse)
+        layer = mpusim_fc(units=units,
+                            activation=activation,
+                            use_bias=use_bias,
+                            kernel_initializer=kernel_initializer,
+                            bias_initializer=bias_initializer,
+                            kernel_regularizer=kernel_regularizer,
+                            bias_regularizer=bias_regularizer,
+                            activity_regularizer=activity_regularizer,
+                            activations_datatype_size_byte=activations_datatype_size_byte,
+                            weights_datatype_size_byte=weights_datatype_size_byte,
+                            results_datatype_size_byte=results_datatype_size_byte,
+                            systolic_array_height=systolic_array_height,
+                            systolic_array_width=systolic_array_width,
+                            activation_fifo_depth=activation_fifo_depth,
+                            accumulator_array_height=accumulator_array_height,
+                            log_file_output_dir=log_file_output_dir,
+                            model_name=model_name,
+                            _reuse=tf.get_variable_scope().reuse)
         ret = layer.apply(inputs, scope=tf.get_variable_scope())
         ret = tf.identity(ret, name='output')
 
     ret.variables = VariableHolder(W=layer.kernel)
+    
     if use_bias:
         ret.variables.b = layer.bias
     return ret
