@@ -11,11 +11,10 @@ import os
 import sys
 import cv2
 import tensorflow as tf
-from tensorflow.contrib import slim as contrib_slim
+from tensorflow.contrib import slim
 
-from . import conv_blocks as ops
-from . import mobilenet as lib
-
+import conv_blocks
+import mobilenet
 
 from tensorpack import *
 from tensorpack.dataflow import imgaug
@@ -47,19 +46,19 @@ def reduce_to_1x1(input_tensor, default_size=7, **kwargs):
     
 def mbv3_op(input_tensor, ef, n, k, s=1, act=tf.nn.relu, se=None, **kwargs):
     
-    return op.expanded_conv(input_tensor,
-                                expansion_size=expand_input(ef),
-                                kernel_size=(k, k),
-                                stride=s,
-                                num_outputs=n,
-                                inner_activation_fn=act,
-                                expansion_transform=se,
-                                **kwargs)
+    return conv_blocks.expanded_conv(input_tensor,
+                                        expansion_size=conv_blocks.expand_input_by_factor(ef),
+                                        kernel_size=(k, k),
+                                        stride=s,
+                                        num_outputs=n,
+                                        inner_activation_fn=act,
+                                        expansion_transform=se,
+                                        **kwargs)
 
 # Squeeze Excite with all parameters filled-in, we use hard-sigmoid
 # for gating function and relu for inner activation function.
 squeeze_excite = functools.partial(
-    ops.squeeze_excite, squeeze_factor=4,
+    conv_blocks.squeeze_excite, squeeze_factor=4,
     inner_activation_fn=tf.nn.relu,
     gating_fn=lambda x: tf.nn.relu6(x+3)*0.16667)
 
@@ -128,15 +127,15 @@ class Model(ImageNetModel):
                                 num_outputs=1024, normalizer_fn=None,
                                 activation_fn=hard_swish)
             
-            logits = slim.conv2d(net,
-                                    1000,
-                                    [1, 1],
-                                    activation_fn=None,
-                                    normalizer_fn=None,
-                                    biases_initializer=tf.compat.v1.zeros_initializer(),
-                                    scope='Conv2d_1c_1x1')
+            l = slim.conv2d(l,
+                            1000,
+                            [1, 1],
+                            activation_fn=None,
+                            normalizer_fn=None,
+                            biases_initializer=tf.compat.v1.zeros_initializer(),
+                            scope='Conv2d_1c_1x1')
 
-            return tf.squeeze(logits, [1, 2])
+            return tf.squeeze(l, [1, 2])
 
 
 def get_data(name, batch):
