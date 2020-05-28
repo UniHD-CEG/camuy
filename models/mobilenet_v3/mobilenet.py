@@ -96,19 +96,20 @@ def depth_multiplier(output_params,
                      divisible_by=8,
                      min_depth=8,
                      **unused_kwargs):
-  if 'num_outputs' not in output_params:
-    return
-  d = output_params['num_outputs']
-  output_params['num_outputs'] = _make_divisible(d * multiplier, divisible_by,
-                                                 min_depth)
+    if 'num_outputs' not in output_params:
+        return
+    d = output_params['num_outputs']
+    output_params['num_outputs'] = _make_divisible(d * multiplier,
+                                                        divisible_by,
+                                                        min_depth)
 
 
 _Op = collections.namedtuple('Op', ['op', 'params', 'multiplier_func'])
 
 
 def op(opfunc, multiplier_func=depth_multiplier, **params):
-  multiplier = params.pop('multiplier_transform', multiplier_func)
-  return _Op(opfunc, params=params, multiplier_func=multiplier)
+    multiplier = params.pop('multiplier_transform', multiplier_func)
+    return _Op(opfunc, params=params, multiplier_func=multiplier)
 
 
 class NoOpScope(object):

@@ -45,63 +45,63 @@ _se4 = lambda expansion_tensor, input_tensor: squeeze_excite(expansion_tensor)
 
 
 def hard_swish(x):
-with tf.compat.v1.name_scope('hard_swish'):
-    return x * tf.nn.relu6(x + np.float32(3)) * np.float32(1. / 6.)
+    with tf.compat.v1.name_scope('hard_swish'):
+        return x * tf.nn.relu6(x + np.float32(3)) * np.float32(1. / 6.)
 
 
 def reduce_to_1x1(input_tensor, default_size=7, **kwargs):
-h, w = input_tensor.shape.as_list()[1:3]
-if h is not None and w == h:
-    k = [h, h]
-else:
-    k = [default_size, default_size]
-return slim.avg_pool2d(input_tensor, kernel_size=k, **kwargs)
+    h, w = input_tensor.shape.as_list()[1:3]
+    if h is not None and w == h:
+        k = [h, h]
+    else:
+        k = [default_size, default_size]
+    return slim.avg_pool2d(input_tensor, kernel_size=k, **kwargs)
 
 
 def mbv3_op(ef, n, k, s=1, act=tf.nn.relu, se=None, **kwargs):
-"""Defines a single Mobilenet V3 convolution block.
-Args:
-    ef: expansion factor
-    n: number of output channels
-    k: stride of depthwise
-    s: stride
-    act: activation function in inner layers
-    se: squeeze excite function.
-    **kwargs: passed to expanded_conv
-Returns:
-    An object (lib._Op) for inserting in conv_def, representing this operation.
-"""
-return op(
-    ops.expanded_conv,
-    expansion_size=expand_input(ef),
-    kernel_size=(k, k),
-    stride=s,
-    num_outputs=n,
-    inner_activation_fn=act,
-    expansion_transform=se,
-    **kwargs)
+    """Defines a single Mobilenet V3 convolution block.
+    Args:
+        ef: expansion factor
+        n: number of output channels
+        k: stride of depthwise
+        s: stride
+        act: activation function in inner layers
+        se: squeeze excite function.
+        **kwargs: passed to expanded_conv
+    Returns:
+        An object (lib._Op) for inserting in conv_def, representing this operation.
+    """
+    return op(
+        ops.expanded_conv,
+        expansion_size=expand_input(ef),
+        kernel_size=(k, k),
+        stride=s,
+        num_outputs=n,
+        inner_activation_fn=act,
+        expansion_transform=se,
+        **kwargs)
 
 
 def mbv3_fused(ef, n, k, s=1, **kwargs):
-"""Defines a single Mobilenet V3 convolution block.
-Args:
-    ef: expansion factor
-    n: number of output channels
-    k: stride of depthwise
-    s: stride
-    **kwargs: will be passed to mbv3_op
-Returns:
-    An object (lib._Op) for inserting in conv_def, representing this operation.
-"""
-expansion_fn = functools.partial(slim.conv2d, kernel_size=k, stride=s)
-return mbv3_op(
-    ef,
-    n,
-    k=1,
-    s=s,
-    depthwise_location=None,
-    expansion_fn=expansion_fn,
-    **kwargs)
+    """Defines a single Mobilenet V3 convolution block.
+    Args:
+        ef: expansion factor
+        n: number of output channels
+        k: stride of depthwise
+        s: stride
+        **kwargs: will be passed to mbv3_op
+    Returns:
+        An object (lib._Op) for inserting in conv_def, representing this operation.
+    """
+    expansion_fn = functools.partial(slim.conv2d, kernel_size=k, stride=s)
+    return mbv3_op(
+        ef,
+        n,
+        k=1,
+        s=s,
+        depthwise_location=None,
+        expansion_fn=expansion_fn,
+        **kwargs)
 
 
 mbv3_op_se = functools.partial(mbv3_op, se=_se4)
