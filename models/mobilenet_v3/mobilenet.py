@@ -21,17 +21,21 @@ import collections
 import contextlib
 import copy
 import os
+import sys
 
 import tensorflow as tf
 from tensorflow.contrib import slim as contrib_slim
 
-slim = contrib_slim
+sys.path.append('../..')
 
+from mpusim_conv2d.mpusim_conv2d import *
+from mpusim_fc.mpusim_fully_connected import *
+
+slim = contrib_slim
 
 @slim.add_arg_scope
 def apply_activation(x, name=None, activation_fn=None):
   return activation_fn(x, name=name) if activation_fn else x
-
 
 def _fixed_padding(inputs, kernel_size, rate=1):
   """Pads the input along the spatial dimensions independently of input size.

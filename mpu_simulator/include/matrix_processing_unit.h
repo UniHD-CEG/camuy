@@ -605,328 +605,340 @@ public:
         m_systolicArrayInputCount = 0UL;
 
         /* Matrix multiplication */
-
-        do
+        
+        if(!((m_weightMatrixBlocksX == 1UL) &&
+                (m_weightMatrixBlocksY == 1UL) &&
+                (m_activationMatrixBlocksY == 1UL)))
         {
-            if(m_debugFlag && m_verboseDebugOutputFlag)
+
+            do
             {
-                std::cout << "------------------------------------------- "
-                            << "Iteration " << m_iterationCountTotal
-                            << " ------------------------------------------"
-                            << std::endl;
-            }
+                if(m_debugFlag && m_verboseDebugOutputFlag)
+                {
+                    std::cout << "------------------------------------------- "
+                                << "Iteration " << m_iterationCountTotal
+                                << " ------------------------------------------"
+                                << std::endl;
+                }
 
-            m_systolicDataSetupUnit.runIteration();
-            m_weightFetcher.runIteration();
-            m_systolicArray.runIteration();
-            m_accumulatorArray.runIteration();
+                m_systolicDataSetupUnit.runIteration();
+                m_weightFetcher.runIteration();
+                m_systolicArray.runIteration();
+                m_accumulatorArray.runIteration();
 
-            const size_t weightMatrixOutputRowsWeightUpdateSignal{
-                                (m_systolicArrayActivationMatrixRowBlockCoordinate !=
+                const size_t weightMatrixOutputRowsWeightUpdateSignal{
+                                    (m_systolicArrayActivationMatrixRowBlockCoordinate !=
+                                                                        (m_activationMatrixBlocksY - 1)) ?
+                                                                        m_accumulatorArrayBufferHeight :
+                                                                        m_activationMatrixRowsLastBlock};
+
+                if((m_systolicArrayInputCount ==
+                            weightMatrixOutputRowsWeightUpdateSignal) &&
+                        (m_systolicArrayActivationMatrixRowBlockCoordinate !=
+                                                                m_activationMatrixBlocksY))
+                {
+                    m_systolicArrayActivationMatrixRowBlockCoordinate =
+                                    m_weightFetcherActivationMatrixRowBlockCoordinate;
+
+                    if(m_systolicArrayActivationMatrixRowBlockCoordinate !=
+                                                        m_activationMatrixBlocksY)
+                    {
+                        m_systolicArray.setUpdateWeightsSignal(true);
+
+                        if(m_debugFlag && m_verboseDebugOutputFlag)
+                        {
+                            std::cout << "Set update weights signal" << std::endl;
+                        }
+
+                        m_systolicArrayInputCount = 0;
+                    }
+                }
+
+                if(!m_systolicDataSetupUnit.hasBusySignal() &&
+                                (m_activationMatrixBlockCoordinateY != m_activationMatrixBlocksY))
+                {
+
+                    const size_t activationMatrixInputRows{
+                                        (m_activationMatrixBlockCoordinateY !=
+                                                    (m_activationMatrixBlocksY - 1)) ?
+                                                                m_accumulatorArrayBufferHeight :
+                                                                m_activationMatrixRowsLastBlock};
+
+                    m_systolicDataSetupUnit.addInputMatrix(matrixAPtr +
+                                                            m_activationMatrixBlockCoordinateY*
+                                                            m_accumulatorArrayBufferHeight*sizeK,
+                                                            sizeK, activationMatrixInputRows,
+                                                            m_weightMatrixBlocksX);
+
+                    if(m_debugFlag && m_verboseDebugOutputFlag)
+                    {
+                        std::cout << "Systolic data setup unit: Added input block "
+                                                << m_activationMatrixBlockCoordinateY
+                                                << ", rows: " << activationMatrixInputRows
+                                                << ", columns: " << sizeK
+                                                << ", repetition count: "  << m_weightMatrixBlocksX
+                                                << std::endl;
+                    }
+
+                    ++m_activationMatrixBlockCoordinateY;
+
+                }
+
+                const size_t weightMatrixOutputRowsWeightUpdate{
+                                    (m_weightFetcherActivationMatrixRowBlockCoordinate !=
                                                                     (m_activationMatrixBlocksY - 1)) ?
                                                                     m_accumulatorArrayBufferHeight :
                                                                     m_activationMatrixRowsLastBlock};
 
-            if((m_systolicArrayInputCount ==
-                        weightMatrixOutputRowsWeightUpdateSignal) &&
-                    (m_systolicArrayActivationMatrixRowBlockCoordinate !=
-                                                            m_activationMatrixBlocksY))
-            {
-                m_systolicArrayActivationMatrixRowBlockCoordinate =
-                                m_weightFetcherActivationMatrixRowBlockCoordinate;
-
-                if(m_systolicArrayActivationMatrixRowBlockCoordinate !=
-                                                    m_activationMatrixBlocksY)
+                if((m_systolicArrayInputCount ==
+                        (weightMatrixOutputRowsWeightUpdate - 1)) &&
+                        (m_weightFetcherActivationMatrixRowBlockCoordinate !=
+                                                        m_activationMatrixBlocksY))
                 {
-                    m_systolicArray.setUpdateWeightsSignal(true);
 
-                    if(m_debugFlag && m_verboseDebugOutputFlag)
+                    if(m_weightMatrixBlockCoordinateY != (m_weightMatrixBlocksY - 1))
                     {
-                        std::cout << "Set update weights signal" << std::endl;
-                    }
-
-                    m_systolicArrayInputCount = 0;
-                }
-            }
-
-            if(!m_systolicDataSetupUnit.hasBusySignal() &&
-                            (m_activationMatrixBlockCoordinateY != m_activationMatrixBlocksY))
-            {
-
-                const size_t activationMatrixInputRows{
-                                    (m_activationMatrixBlockCoordinateY !=
-                                                (m_activationMatrixBlocksY - 1)) ?
-                                                            m_accumulatorArrayBufferHeight :
-                                                            m_activationMatrixRowsLastBlock};
-
-                m_systolicDataSetupUnit.addInputMatrix(matrixAPtr +
-                                                        m_activationMatrixBlockCoordinateY*
-                                                        m_accumulatorArrayBufferHeight*sizeK,
-                                                        sizeK, activationMatrixInputRows,
-                                                        m_weightMatrixBlocksX);
-
-                if(m_debugFlag && m_verboseDebugOutputFlag)
-                {
-                    std::cout << "Systolic data setup unit: Added input block "
-                                            << m_activationMatrixBlockCoordinateY
-                                            << ", rows: " << activationMatrixInputRows
-                                            << ", columns: " << sizeK
-                                            << ", repetition count: "  << m_weightMatrixBlocksX
-                                            << std::endl;
-                }
-
-                ++m_activationMatrixBlockCoordinateY;
-
-            }
-
-            const size_t weightMatrixOutputRowsWeightUpdate{
-                                (m_weightFetcherActivationMatrixRowBlockCoordinate !=
-                                                                (m_activationMatrixBlocksY - 1)) ?
-                                                                m_accumulatorArrayBufferHeight :
-                                                                m_activationMatrixRowsLastBlock};
-
-            if((m_systolicArrayInputCount ==
-                    (weightMatrixOutputRowsWeightUpdate - 1)) &&
-                    (m_weightFetcherActivationMatrixRowBlockCoordinate !=
-                                                    m_activationMatrixBlocksY))
-            {
-
-                if(m_weightMatrixBlockCoordinateY != (m_weightMatrixBlocksY - 1))
-                {
-                    ++m_weightMatrixBlockCoordinateY;
-                }
-
-                else
-                {
-                    m_weightMatrixBlockCoordinateY = 0;
-
-                    if(m_weightMatrixBlockCoordinateX != (m_weightMatrixBlocksX - 1))
-                    {
-
-                        ++m_weightMatrixBlockCoordinateX;
+                        ++m_weightMatrixBlockCoordinateY;
                     }
 
                     else
                     {
-                        m_weightMatrixBlockCoordinateX = 0;
-                        ++m_weightFetcherActivationMatrixRowBlockCoordinate;
-                    }
-                }
+                        m_weightMatrixBlockCoordinateY = 0;
 
-                if(m_weightFetcherActivationMatrixRowBlockCoordinate !=
-                                                        m_activationMatrixBlocksY)
-                {
-                    m_weightFetcher.updateWeights(m_weightMatrixBlockCoordinateX,
-                                                    m_weightMatrixBlockCoordinateY);
-
-                    if(m_debugFlag && m_verboseDebugOutputFlag)
-                    {
-                        std::cout << "Weight fetcher: Updating to block ("
-                                    << m_weightMatrixBlockCoordinateX
-                                    << ", "
-                                    << m_weightMatrixBlockCoordinateY
-                                    << ") of {"
-                                    << m_weightMatrixBlocksX - 1
-                                    << ", "
-                                    << m_weightMatrixBlocksY - 1
-                                    << '}' << std::endl;
-                    }
-                }
-            }
-
-            std::vector<size_t> accumulatorArrayColumnAccessCountVector(m_systolicArrayWidth);
-            size_t concurrentAccumulatorArrayLoadCount{0UL};
-
-            for(auto readOperationQueueIterator{m_accumulatorArrayReadOperationQueue.begin()};
-                        readOperationQueueIterator < m_accumulatorArrayReadOperationQueue.end();)
-            {
-
-                size_t accumulatorArrayColumnAccessStart{0UL};
-                size_t accumulatorArrayColumnAccessEnd{0UL};
-
-                loadAccumulatorData(matrixCPtr,
-                                        sizeN,
-                                        readOperationQueueIterator->destMatrixRowStart,
-                                        readOperationQueueIterator->destMatrixColumnStart,
-                                        readOperationQueueIterator->accumulatorArrayBufferSelectBit,
-                                        readOperationQueueIterator->diagonalCoordinate,
-                                        readOperationQueueIterator->blockHeight,
-                                        readOperationQueueIterator->blockWidth,
-                                        concurrentAccumulatorArrayLoadCount,
-                                        accumulatorArrayColumnAccessStart,
-                                        accumulatorArrayColumnAccessEnd);
-
-                for(size_t columnCount{accumulatorArrayColumnAccessEnd};
-                                    columnCount <= accumulatorArrayColumnAccessStart; ++columnCount)
-                {
-                    ++accumulatorArrayColumnAccessCountVector.at(columnCount);
-                }
-
-                ++(readOperationQueueIterator->diagonalCoordinate);
-
-                if(readOperationQueueIterator->diagonalCoordinate ==
-                                        readOperationQueueIterator->blockDiagonals)
-                {
-                    if(m_debugFlag)
-                    {
-                        if(m_verboseDebugOutputFlag)
+                        if(m_weightMatrixBlockCoordinateX != (m_weightMatrixBlocksX - 1))
                         {
-                            std::cout << "Result matrix read at queue position "
-                                        << readOperationQueueIterator -
-                                                    m_accumulatorArrayReadOperationQueue.begin()
-                                        << " done, coordinate ("
-                                        << m_resultMatrixReadDoneBlockCoordinateX
-                                        << ", "
-                                        << m_resultMatrixReadDoneBlockCoordinateY
-                                        << ") of {"
-                                        << m_weightMatrixBlocksX - 1
-                                        << ", "
-                                        << m_activationMatrixBlocksY - 1
-                                        << "}, columns: "
-                                        << readOperationQueueIterator->blockWidth
-                                        << ", rows: "
-                                        << readOperationQueueIterator->blockHeight
-                                        << std::endl;
+
+                            ++m_weightMatrixBlockCoordinateX;
                         }
 
                         else
                         {
-                            std::cout << m_resultMatrixReadDoneBlockCoordinateY*
-                                            m_weightMatrixBlocksX +
-                                            m_resultMatrixReadDoneBlockCoordinateX + 1
-                                        << " of "
-                                        << m_weightMatrixBlocksX*m_activationMatrixBlocksY
-                                        << " output blocks done" << std::endl;
+                            m_weightMatrixBlockCoordinateX = 0;
+                            ++m_weightFetcherActivationMatrixRowBlockCoordinate;
                         }
                     }
 
-                    if(m_resultMatrixReadDoneBlockCoordinateX <
-                                                (m_weightMatrixBlocksX - 1))
+                    if(m_weightFetcherActivationMatrixRowBlockCoordinate !=
+                                                            m_activationMatrixBlocksY)
                     {
-                       ++m_resultMatrixReadDoneBlockCoordinateX;
+                        m_weightFetcher.updateWeights(m_weightMatrixBlockCoordinateX,
+                                                        m_weightMatrixBlockCoordinateY);
+
+                        if(m_debugFlag && m_verboseDebugOutputFlag)
+                        {
+                            std::cout << "Weight fetcher: Updating to block ("
+                                        << m_weightMatrixBlockCoordinateX
+                                        << ", "
+                                        << m_weightMatrixBlockCoordinateY
+                                        << ") of {"
+                                        << m_weightMatrixBlocksX - 1
+                                        << ", "
+                                        << m_weightMatrixBlocksY - 1
+                                        << '}' << std::endl;
+                        }
+                    }
+                }
+
+                std::vector<size_t> accumulatorArrayColumnAccessCountVector(m_systolicArrayWidth);
+                size_t concurrentAccumulatorArrayLoadCount{0UL};
+
+                for(auto readOperationQueueIterator{m_accumulatorArrayReadOperationQueue.begin()};
+                            readOperationQueueIterator < m_accumulatorArrayReadOperationQueue.end();)
+                {
+
+                    size_t accumulatorArrayColumnAccessStart{0UL};
+                    size_t accumulatorArrayColumnAccessEnd{0UL};
+
+                    loadAccumulatorData(matrixCPtr,
+                                            sizeN,
+                                            readOperationQueueIterator->destMatrixRowStart,
+                                            readOperationQueueIterator->destMatrixColumnStart,
+                                            readOperationQueueIterator->accumulatorArrayBufferSelectBit,
+                                            readOperationQueueIterator->diagonalCoordinate,
+                                            readOperationQueueIterator->blockHeight,
+                                            readOperationQueueIterator->blockWidth,
+                                            concurrentAccumulatorArrayLoadCount,
+                                            accumulatorArrayColumnAccessStart,
+                                            accumulatorArrayColumnAccessEnd);
+
+                    for(size_t columnCount{accumulatorArrayColumnAccessEnd};
+                                        columnCount <= accumulatorArrayColumnAccessStart; ++columnCount)
+                    {
+                        ++accumulatorArrayColumnAccessCountVector.at(columnCount);
+                    }
+
+                    ++(readOperationQueueIterator->diagonalCoordinate);
+
+                    if(readOperationQueueIterator->diagonalCoordinate ==
+                                            readOperationQueueIterator->blockDiagonals)
+                    {
+                        if(m_debugFlag)
+                        {
+                            if(m_verboseDebugOutputFlag)
+                            {
+                                std::cout << "Result matrix read at queue position "
+                                            << readOperationQueueIterator -
+                                                        m_accumulatorArrayReadOperationQueue.begin()
+                                            << " done, coordinate ("
+                                            << m_resultMatrixReadDoneBlockCoordinateX
+                                            << ", "
+                                            << m_resultMatrixReadDoneBlockCoordinateY
+                                            << ") of {"
+                                            << m_weightMatrixBlocksX - 1
+                                            << ", "
+                                            << m_activationMatrixBlocksY - 1
+                                            << "}, columns: "
+                                            << readOperationQueueIterator->blockWidth
+                                            << ", rows: "
+                                            << readOperationQueueIterator->blockHeight
+                                            << std::endl;
+                            }
+
+                            else
+                            {
+                                std::cout << m_resultMatrixReadDoneBlockCoordinateY*
+                                                m_weightMatrixBlocksX +
+                                                m_resultMatrixReadDoneBlockCoordinateX + 1
+                                            << " of "
+                                            << m_weightMatrixBlocksX*m_activationMatrixBlocksY
+                                            << " output blocks done" << std::endl;
+                            }
+                        }
+
+                        if(m_resultMatrixReadDoneBlockCoordinateX <
+                                                    (m_weightMatrixBlocksX - 1))
+                        {
+                            ++m_resultMatrixReadDoneBlockCoordinateX;
+                        }
+
+                        else
+                        {
+                            m_resultMatrixReadDoneBlockCoordinateX = 0;
+                            ++m_resultMatrixReadDoneBlockCoordinateY;
+                        }
+
+                        m_accumulatorArrayReadOperationQueue.erase(readOperationQueueIterator);
+
+                        if(m_debugFlag && m_verboseDebugOutputFlag)
+                        {
+                            std::cout << "Read operations currently in progress: "
+                                        << m_accumulatorArrayReadOperationQueue.size() << std::endl;
+                        }
                     }
 
                     else
                     {
-                       m_resultMatrixReadDoneBlockCoordinateX = 0;
-                       ++m_resultMatrixReadDoneBlockCoordinateY;
+                        ++readOperationQueueIterator;
                     }
+                }
 
-                    m_accumulatorArrayReadOperationQueue.erase(readOperationQueueIterator);
+                for(const size_t& element : accumulatorArrayColumnAccessCountVector)
+                {
+                    if(m_concurrentAccumulatorArrayLoadCountPerColumnMax <
+                                                                    element)
+                    {
+                        m_concurrentAccumulatorArrayLoadCountPerColumnMax = element;
+                    }
+                }
+
+                if(m_concurrentAccumulatorLoadCountMax <
+                                    concurrentAccumulatorArrayLoadCount)
+                {
+                    m_concurrentAccumulatorLoadCountMax =
+                                concurrentAccumulatorArrayLoadCount;
+                }
+
+                if(m_accumulatorArray.hasDataReadySignal()  &&
+                                (m_resultMatrixReadInProgressBlockCoordinateY != m_activationMatrixBlocksY))
+                {
+                    m_accumulatorArray.clearDataReadyBit();
+
+                    const size_t outputRows{(m_resultMatrixReadInProgressBlockCoordinateY !=
+                                                                (m_activationMatrixBlocksY - 1)) ?
+                                                                        m_accumulatorArrayBufferHeight :
+                                                                        m_activationMatrixRowsLastBlock};
+
+                    const size_t outputColumns{(m_resultMatrixReadInProgressBlockCoordinateX !=
+                                                                        (m_weightMatrixBlocksX - 1)) ?
+                                                                                    m_systolicArrayWidth :
+                                                                                    m_weightMatrixColumnsLastBlock};
+
+                    m_accumulatorArrayReadOperationQueue.emplace_back(
+                                                    AccumulatorArrayReadOperation(
+                                                                        m_resultMatrixReadInProgressBlockCoordinateY*
+                                                                        m_accumulatorArrayBufferHeight,
+                                                                        m_systolicArrayWidth*
+                                                                        m_resultMatrixReadInProgressBlockCoordinateX,
+                                                                        m_accumulatorArrayBufferSelectBit,
+                                                                        outputRows,
+                                                                        outputColumns));
+
+                    if(m_accumulatorArrayReadOperationQueueLengthMax <
+                                        m_accumulatorArrayReadOperationQueue.size())
+                    {
+                        m_accumulatorArrayReadOperationQueueLengthMax =
+                                        m_accumulatorArrayReadOperationQueue.size();
+                    }
 
                     if(m_debugFlag && m_verboseDebugOutputFlag)
                     {
-                        std::cout << "Read operations currently in progress: "
-                                    << m_accumulatorArrayReadOperationQueue.size() << std::endl;
+                        std::cout << "Added accumulator array read operation, "
+                                                                "queue position: "
+                                    << m_accumulatorArrayReadOperationQueue.size() - 1
+                                    << ", accumulator array buffer: "
+                                    << m_accumulatorArrayBufferSelectBit
+                                    << ", block coordinate: ("
+                                    << m_resultMatrixReadInProgressBlockCoordinateX
+                                    << ", "
+                                    << m_resultMatrixReadInProgressBlockCoordinateY
+                                    << "), columns: "
+                                    << outputColumns
+                                    << ", rows: "
+                                    << outputRows
+                                    << std::endl;
+                    }
+
+                    m_accumulatorArrayBufferSelectBit =
+                                !m_accumulatorArrayBufferSelectBit;
+
+                    if(m_resultMatrixReadInProgressBlockCoordinateX <
+                                                        (m_weightMatrixBlocksX - 1))
+                    {
+                        ++m_resultMatrixReadInProgressBlockCoordinateX;
+                    }
+
+                    else
+                    {
+                        m_resultMatrixReadInProgressBlockCoordinateX = 0;
+                        ++m_resultMatrixReadInProgressBlockCoordinateY;
                     }
                 }
 
-                else
+                m_systolicDataSetupUnit.updateState();
+                m_weightFetcher.updateState();
+                m_systolicArray.updateState();
+                m_accumulatorArray.updateState();
+
+                ++m_systolicArrayInputCount;
+                ++m_iterationCountTotal;
+
+                if(m_systolicArrayInputCountMax <
+                                m_systolicArrayInputCount)
                 {
-                    ++readOperationQueueIterator;
+                    m_systolicArrayInputCountMax =
+                                m_systolicArrayInputCount;
                 }
             }
 
-            for(const size_t& element : accumulatorArrayColumnAccessCountVector)
-            {
-                if(m_concurrentAccumulatorArrayLoadCountPerColumnMax <
-                                                                element)
-                {
-                    m_concurrentAccumulatorArrayLoadCountPerColumnMax = element;
-                }
-            }
-
-            if(m_concurrentAccumulatorLoadCountMax <
-                                concurrentAccumulatorArrayLoadCount)
-            {
-                m_concurrentAccumulatorLoadCountMax =
-                            concurrentAccumulatorArrayLoadCount;
-            }
-
-            if(m_accumulatorArray.hasDataReadySignal()  &&
-                            (m_resultMatrixReadInProgressBlockCoordinateY != m_activationMatrixBlocksY))
-            {
-                m_accumulatorArray.clearDataReadyBit();
-
-                const size_t outputRows{(m_resultMatrixReadInProgressBlockCoordinateY !=
-                                                            (m_activationMatrixBlocksY - 1)) ?
-                                                                    m_accumulatorArrayBufferHeight :
-                                                                    m_activationMatrixRowsLastBlock};
-
-                const size_t outputColumns{(m_resultMatrixReadInProgressBlockCoordinateX !=
-                                                                    (m_weightMatrixBlocksX - 1)) ?
-                                                                                m_systolicArrayWidth :
-                                                                                m_weightMatrixColumnsLastBlock};
-
-                m_accumulatorArrayReadOperationQueue.emplace_back(
-                                                AccumulatorArrayReadOperation(
-                                                                    m_resultMatrixReadInProgressBlockCoordinateY*
-                                                                    m_accumulatorArrayBufferHeight,
-                                                                    m_systolicArrayWidth*
-                                                                    m_resultMatrixReadInProgressBlockCoordinateX,
-                                                                    m_accumulatorArrayBufferSelectBit,
-                                                                    outputRows,
-                                                                    outputColumns));
-
-                if(m_accumulatorArrayReadOperationQueueLengthMax <
-                                    m_accumulatorArrayReadOperationQueue.size())
-                {
-                    m_accumulatorArrayReadOperationQueueLengthMax =
-                                    m_accumulatorArrayReadOperationQueue.size();
-                }
-
-                if(m_debugFlag && m_verboseDebugOutputFlag)
-                {
-                    std::cout << "Added accumulator array read operation, "
-                                                            "queue position: "
-                                << m_accumulatorArrayReadOperationQueue.size() - 1
-                                << ", accumulator array buffer: "
-                                << m_accumulatorArrayBufferSelectBit
-                                << ", block coordinate: ("
-                                << m_resultMatrixReadInProgressBlockCoordinateX
-                                << ", "
-                                << m_resultMatrixReadInProgressBlockCoordinateY
-                                << "), columns: "
-                                << outputColumns
-                                << ", rows: "
-                                << outputRows
-                                << std::endl;
-                }
-
-                m_accumulatorArrayBufferSelectBit =
-                               !m_accumulatorArrayBufferSelectBit;
-
-                if(m_resultMatrixReadInProgressBlockCoordinateX <
-                                                    (m_weightMatrixBlocksX - 1))
-                {
-                   ++m_resultMatrixReadInProgressBlockCoordinateX;
-                }
-
-                else
-                {
-                   m_resultMatrixReadInProgressBlockCoordinateX = 0;
-                   ++m_resultMatrixReadInProgressBlockCoordinateY;
-                }
-            }
-
-            m_systolicDataSetupUnit.updateState();
-            m_weightFetcher.updateState();
-            m_systolicArray.updateState();
-            m_accumulatorArray.updateState();
-
-            ++m_systolicArrayInputCount;
-            ++m_iterationCountTotal;
-
-            if(m_systolicArrayInputCountMax <
-                            m_systolicArrayInputCount)
-            {
-                m_systolicArrayInputCountMax =
-                            m_systolicArrayInputCount;
-            }
+            while(m_resultMatrixReadDoneBlockCoordinateY !=
+                                                m_activationMatrixBlocksY);
+        
         }
-
-        while(m_resultMatrixReadDoneBlockCoordinateY !=
-                                            m_activationMatrixBlocksY);
+        
+        else
+        {
+            /* TODO: Add simplified execution path for single activation/weight/output block */
+        }
 
         Eigen::Map<const RMatrix<ActivationDatatype>> matrixAEigen(matrixAPtr, sizeM, sizeK);
         Eigen::Map<const RMatrix<WeightDatatype>> matrixBEigen(matrixBPtr, sizeK, sizeN);

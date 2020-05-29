@@ -14,7 +14,6 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 import conv_blocks
-import mobilenet
 
 from tensorpack import *
 from tensorpack.dataflow import imgaug
@@ -30,6 +29,15 @@ from mpusim_fc.mpusim_mat_mul_gradient import *
 from mpusim_fc.mpusim_fully_connected import *
 
 from models.imagenet_utils import ImageNetModel, get_imagenet_dataflow
+
+# Disable parallel op execution to ensure that
+# the MPU log outputs have the same order as
+# the operations of the model
+
+session_conf = tf.ConfigProto(
+      intra_op_parallelism_threads=1,
+      inter_op_parallelism_threads=1)
+sess = tf.Session(config=session_conf)
 
 def hard_swish(x):
     with tf.compat.v1.name_scope('hard_swish'):
@@ -57,6 +65,7 @@ def mbv3_op(input_tensor, ef, n, k, s=1, act=tf.nn.relu, se=None, **kwargs):
 
 # Squeeze Excite with all parameters filled-in, we use hard-sigmoid
 # for gating function and relu for inner activation function.
+
 squeeze_excite = functools.partial(
     conv_blocks.squeeze_excite, squeeze_factor=4,
     inner_activation_fn=tf.nn.relu,
@@ -64,6 +73,7 @@ squeeze_excite = functools.partial(
 
 # Wrap squeeze excite op as expansion_transform that takes
 # both expansion and input tensor.
+
 _se4 = lambda expansion_tensor, input_tensor: squeeze_excite(expansion_tensor)
 
 mbv3_op_se = functools.partial(mbv3_op, se=_se4)
@@ -89,22 +99,19 @@ class Model(ImageNetModel):
         self.systolic_array_height=systolic_array_height
         self.systolic_array_width=systolic_array_width
         self.accumulator_array_height=accumulator_array_height
-        
+
         self.mpusim_logdir=mpusim_logdir
 
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
-        with argscope([Conv2D, MaxPooling], data_format=self.data_format), \
-                argscope([Conv2D, FullyConnected],
-                                activation=tf.nn.relu,
-                                kernel_initializer=constant_init):
+        with argscope([mpusim_conv2d],
+                        data_format=self.data_format,
+                        activation=tf.nn.relu,
+                        kernel_initializer=constant_init):
                 
             
-            l = slim.conv2d(image,
-                                stride=2,
-                                num_outputs=16,
-                                kernel_size=(3, 3),
-                                activation_fn=hard_swish)
+            l = mpusim_conv2d('Conv', image, 16,
+                                3, strides=(2, 2), activation=hard_swish)
             
             l = mbv3_op_se(l, ef=1, n=16, k=3, s=2)
             l = mbv3_op(l, ef=72./16, n=24, k=3, s=2)
@@ -118,22 +125,16 @@ class Model(ImageNetModel):
             l = mbv3_op_se(l, ef=6, n=96, k=5, s=1, act=hard_swish)
             l = mbv3_op_se(l, ef=6, n=96, k=5, s=1, act=hard_swish)
             
-            l = slim.conv2d(l, stride=1, kernel_size=[1, 1],
-                                num_outputs=576, activation_fn=hard_swish)
+            l = mpusim_conv2d('Conv_1', l, 576, 1,
+                                activation=hard_swish)
             
             l = reduce_to_1x1(l, default_size=7, stride=1, padding='VALID')
             
-            l = slim.conv2d(l, stride=1, kernel_size=[1, 1],
-                                num_outputs=1024, normalizer_fn=None,
-                                activation_fn=hard_swish)
+            l = mpusim_conv2d('Conv_2', l, 1024, 1,
+                                activation=hard_swish)
             
-            l = slim.conv2d(l,
-                            1000,
-                            [1, 1],
-                            activation_fn=None,
-                            normalizer_fn=None,
-                            biases_initializer=tf.compat.v1.zeros_initializer(),
-                            scope='Conv2d_1c_1x1')
+            l = mpusim_conv2d('Conv2d_1c_1x1', l, 1000, 1, activation=None,
+                                bias_initializer=tf.compat.v1.zeros_initializer())
 
             return tf.squeeze(l, [1, 2])
 
@@ -217,7 +218,7 @@ if __name__ == '__main__':
                             type=str, default='.')
     args = parser.parse_args()
     
-    logger.set_logger_dir(os.path.join('train_log', 'alexnet' + args.tensorpack_logdir_id))
+    logger.set_logger_dir(os.path.join('train_log', 'mobilenet_v3' + args.tensorpack_logdir_id))
     
     config = get_config(args.activations_datatype_size_byte,
                         args.weights_datatype_size_byte,

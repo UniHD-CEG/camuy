@@ -73,8 +73,8 @@ class mpusim_fc_base(Layer):
                     systolic_array_width=256,
                     activation_fifo_depth=8,
                     accumulator_array_height=4096,
-                    log_file_output_dir='',
-                    model_name='',
+                    log_file_output_dir='.',
+                    model_name='unnamed',
                     **kwargs):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
