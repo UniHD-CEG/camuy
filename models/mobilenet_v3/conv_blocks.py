@@ -21,10 +21,13 @@ import sys
 import tensorflow as tf
 from tensorflow.contrib import slim as contrib_slim
 
+from tensorpack.tfutils import argscope
+
 sys.path.append('../..')
 
 from mpusim_conv2d.mpusim_conv2d import *
 from mpusim_fc.mpusim_fully_connected import *
+from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
 
 slim = contrib_slim
 
@@ -151,7 +154,7 @@ def expanded_conv(input_tensor,
                   inner_activation_fn=None,
                   depthwise_activation_fn=None,
                   project_activation_fn=tf.identity,
-                  depthwise_fn=slim.separable_conv2d,
+                  depthwise_fn=mpusim_separable_convolution2d,
                   expansion_fn=split_conv,
                   projection_fn=split_conv,
                   scope=None):
@@ -228,7 +231,8 @@ def expanded_conv(input_tensor,
     with tf.compat.v1.variable_scope(scope, default_name='expanded_conv') as s, \
         tf.compat.v1.name_scope(s.original_name_scope), \
         slim.arg_scope((slim.conv2d,), **conv_defaults), \
-        slim.arg_scope((slim.separable_conv2d,), **dw_defaults):
+        argscope((mpusim_separable_convolution2d,), **dw_defaults):
+            
         prev_depth = input_tensor.get_shape().as_list()[3]
     
         if  depthwise_location not in [None, 'input', 'output', 'expansion']:

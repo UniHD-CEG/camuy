@@ -152,7 +152,7 @@ def mpusim_conv2d(
                                                         padding.upper(),
                                                         **kwargs)
                     for input_block, kernel_block in zip(inputs, kernels)]
-            conv = tf.concat(outputs, channel_axis)
+        conv = tf.concat(outputs, channel_axis)
 
     ret = tf.nn.bias_add(conv, b, data_format=data_format) if use_bias else conv
     if activation is not None:
