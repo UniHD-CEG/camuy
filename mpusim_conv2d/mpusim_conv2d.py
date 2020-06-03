@@ -135,45 +135,23 @@ def mpusim_conv2d(
                                                     padding.upper(),
                                                     **kwargs)
     else:
-        conv = None
-        if get_tf_version_tuple() >= (1, 13):
-            try:
-                conv = mpu_sim_conv2d_lib.mpu_sim_conv2d(inputs,
-                                                            W,
-                                                            activations_datatype_size_byte,
-                                                            weights_datatype_size_byte,
-                                                            results_datatype_size_byte,
-                                                            systolic_array_height,
-                                                            systolic_array_width,
-                                                            activation_fifo_depth,
-                                                            accumulator_array_height,
-                                                            log_file_output_dir,
-                                                            model_name,
-                                                            stride,
-                                                            padding.upper(),
-                                                            **kwargs)
-            except ValueError:
-                log_once("CUDNN group convolution support is only available with "
-                         "https://github.com/tensorflow/tensorflow/pull/25818 . "
-                         "Will fall back to a loop-based slow implementation instead!", 'warn')
-        if conv is None:
-            inputs = tf.split(inputs, split, channel_axis)
-            kernels = tf.split(W, split, 3)
-            outputs = [mpu_sim_conv2d_lib.mpu_sim_conv2d(input_block,
-                                                            kernel_block,
-                                                            activations_datatype_size_byte,
-                                                            weights_datatype_size_byte,
-                                                            results_datatype_size_byte,
-                                                            systolic_array_height,
-                                                            systolic_array_width,
-                                                            activation_fifo_depth,
-                                                            accumulator_array_height,
-                                                            log_file_output_dir,
-                                                            model_name,
-                                                            stride,
-                                                            padding.upper(),
-                                                            **kwargs)
-                       for input_block, kernel_block in zip(inputs, kernels)]
+        inputs = tf.split(inputs, split, channel_axis)
+        kernels = tf.split(W, split, 3)
+        outputs = [mpu_sim_conv2d_lib.mpu_sim_conv2d(input_block,
+                                                        kernel_block,
+                                                        activations_datatype_size_byte,
+                                                        weights_datatype_size_byte,
+                                                        results_datatype_size_byte,
+                                                        systolic_array_height,
+                                                        systolic_array_width,
+                                                        activation_fifo_depth,
+                                                        accumulator_array_height,
+                                                        log_file_output_dir,
+                                                        model_name,
+                                                        stride,
+                                                        padding.upper(),
+                                                        **kwargs)
+                    for input_block, kernel_block in zip(inputs, kernels)]
             conv = tf.concat(outputs, channel_axis)
 
     ret = tf.nn.bias_add(conv, b, data_format=data_format) if use_bias else conv
