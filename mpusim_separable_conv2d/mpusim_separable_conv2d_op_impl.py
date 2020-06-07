@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import math
 
+import tensorflow.compat.v1 as tf
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import function
@@ -28,7 +29,7 @@ from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import candidate_sampling_ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import embedding_ops
-from tensorflow.python.ops import gen_array_ops  # pylint: disable=unused-import
+from tensorflow.python.ops import gen_array_ops
 from tensorflow.python.ops import gen_nn_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
@@ -69,7 +70,7 @@ def mpusim_separable_conv2d_impl(input,
         pointwise_filter = ops.convert_to_tensor(pointwise_filter,
                                                     name="pointwise_filter")
 
-        depthwise_filter_shape = pointwise_filter.get_shape().with_rank(4)
+        depthwise_filter_shape = depthwise_filter.get_shape().with_rank(4)
         
         channels = depthwise_filter_shape.dims[3]
 
@@ -102,7 +103,10 @@ def mpusim_separable_conv2d_impl(input,
                                                             strides=strides,
                                                             padding=padding)
                         for input_block, kernel_block in zip(inputs, kernels)]
-            return tf.concat(outputs, channel_axis)
+            
+            print('Executed depthwise convolution')
+            
+            return tf.concat(outputs, 3)
 
         depthwise = nn_ops.with_space_to_batch(input=input,
                                                 filter_shape=array_ops.shape(depthwise_filter),

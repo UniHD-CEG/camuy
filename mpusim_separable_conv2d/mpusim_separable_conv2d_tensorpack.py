@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import functools
 import six
 import tensorflow.compat.v1 as tf
@@ -57,10 +58,64 @@ from tensorpack.utils.argtools import get_data_format, shape2d, shape4d, log_onc
 from tensorpack.models.common import VariableHolder, layer_register
 from tensorpack.models.tflayer import convert_to_tflayer_args, rename_get_variable
 
-from ..mpusim_depthwise_conv2d import mpusim_depthwise_conv2d
-from ..mpusim_separable_conv2d import mpusim_separable_conv2d
+sys.path.append('..')
+
+from mpusim_depthwise_conv2d import mpusim_depthwise_conv2d
+from .mpusim_separable_conv2d import mpusim_separable_conv2d
 
 __all__ = ['mpusim_separable_convolution2d']
+
+def _model_variable_getter(
+        getter,
+        name,
+        shape=None,
+        dtype=None,
+        initializer=None,
+        regularizer=None,
+        trainable=True,
+        collections=None,
+        caching_device=None,
+        partitioner=None,
+        rename=None,
+        use_resource=None,
+        synchronization=tf_variables.VariableSynchronization.AUTO,
+        aggregation=tf_variables.VariableAggregation.NONE,
+        **_):
+    
+    """Getter that uses model_variable for compatibility with core layers."""
+    
+    short_name = name.split('/')[-1]
+    
+    if rename and short_name in rename:
+        name_components = name.split('/')
+        name_components[-1] = rename[short_name]
+        name = '/'.join(name_components)
+    
+    return variables.model_variable(
+        name,
+        shape=shape,
+        dtype=dtype,
+        initializer=initializer,
+        regularizer=regularizer,
+        collections=collections,
+        trainable=trainable,
+        caching_device=caching_device,
+        partitioner=partitioner,
+        custom_getter=getter,
+        use_resource=use_resource,
+        synchronization=synchronization,
+        aggregation=aggregation)
+
+
+def _build_variable_getter(rename=None):
+    """Build a model variable getter that respects scope getter and renames."""
+
+    # VariableScope will nest the getters
+    def layer_variable_getter(getter, *args, **kwargs):
+        kwargs['rename'] = rename
+        return _model_variable_getter(getter, *args, **kwargs)
+
+    return layer_variable_getter
 
 @layer_register(log_shape=True)
 def mpusim_separable_convolution2d(inputs,
@@ -95,7 +150,7 @@ def mpusim_separable_convolution2d(inputs,
                                     model_name='unnamed'):
    
     if data_format is not 'NHWC':
-        raise ValueError('data_format has to be either NCHW or NHWC.')
+        raise ValueError('data_format has to be NHWC.')
     
     layer_variable_getter = _build_variable_getter({
         'bias': 'biases',
@@ -104,7 +159,7 @@ def mpusim_separable_convolution2d(inputs,
     })
 
     with variable_scope.variable_scope(scope,
-                                        'separable_convolution2d',
+                                        'mpusim_separable_convolution2d',
                                         [inputs],
                                         reuse=reuse,
                                         custom_getter=layer_variable_getter) as sc:
@@ -158,15 +213,15 @@ def mpusim_separable_convolution2d(inputs,
             _add_variable_to_collections(layer.pointwise_kernel,
                                         variables_collections, 'weights')
             
-        if layer.bias is not None:
-                _add_variable_to_collections(layer.bias,
-                                                variables_collections,
-                                                'biases')
+            if layer.bias is not None:
+                    _add_variable_to_collections(layer.bias,
+                                                    variables_collections,
+                                                    'biases')
 
-        if normalizer_fn is not None:
-            normalizer_params = normalizer_params or {}
-            outputs = normalizer_fn(outputs, **normalizer_params)
-            
+            if normalizer_fn is not None:
+                normalizer_params = normalizer_params or {}
+                outputs = normalizer_fn(outputs, **normalizer_params)
+                
         else:
             
             # Actually apply depthwise conv instead of separable conv.

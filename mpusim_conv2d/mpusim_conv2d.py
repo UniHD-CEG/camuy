@@ -135,6 +135,7 @@ def mpusim_conv2d(
                                                     padding.upper(),
                                                     **kwargs)
     else:
+        
         inputs = tf.split(inputs, split, channel_axis)
         kernels = tf.split(W, split, 3)
         outputs = [mpu_sim_conv2d_lib.mpu_sim_conv2d(input_block,

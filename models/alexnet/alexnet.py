@@ -27,11 +27,11 @@ from tensorpack.utils.gpu import get_num_gpu
 
 sys.path.append('../..')
 
-from mpusim_conv2d.mpusim_conv2d_gradient import *
-from mpusim_conv2d.mpusim_conv2d import *
+#from mpusim_conv2d.mpusim_conv2d_gradient import *
+#from mpusim_conv2d.mpusim_conv2d import *
 
-from mpusim_fc.mpusim_mat_mul_gradient import *
-from mpusim_fc.mpusim_fully_connected import *
+#from mpusim_fc.mpusim_mat_mul_gradient import *
+#from mpusim_fc.mpusim_fully_connected import *
 
 from models.imagenet_utils import ImageNetModel, get_imagenet_dataflow
 
@@ -81,8 +81,7 @@ class Model(ImageNetModel):
         with argscope([mpusim_conv2d, MaxPooling], data_format=self.data_format), \
                 argscope([mpusim_conv2d, mpusim_fully_connected],
                                             activation=tf.nn.relu,
-                                            kernel_initializer=constant_init,
-                                            activations_datatype_size_byte=self.activations_datatype_size_byte, 
+                                            kernel_initializer=constant_init activations_datatype_size_byte=self.activations_datatype_size_byte, 
                                             weights_datatype_size_byte=self.weights_datatype_size_byte,
                                             results_datatype_size_byte=self.results_datatype_size_byte,
                                             systolic_array_height=self.systolic_array_height,
@@ -90,9 +89,8 @@ class Model(ImageNetModel):
                                             activation_fifo_depth=8,
                                             accumulator_array_height=self.accumulator_array_height,
                                             log_file_output_dir=self.mpusim_logdir,
-                                            model_name='alexnet_sys_arr_h_{}_sys_arr_w_{}_acc_arr_h_{}'.format(self.systolic_array_height,
-                                                                                                                self.systolic_array_width, 
-                                                                                                                self.accumulator_array_height)):
+                                            model_name='alexnet_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
+                                                                                                                self.systolic_array_width)):
                 
             # necessary padding to get 55x55 after conv1
             image = tf.pad(image, [[0, 0], [2, 2], [2, 2], [0, 0]])

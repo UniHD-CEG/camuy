@@ -230,8 +230,7 @@ def expanded_conv(input_tensor,
   
     with tf.compat.v1.variable_scope(scope, default_name='expanded_conv') as s, \
         tf.compat.v1.name_scope(s.original_name_scope), \
-        slim.arg_scope((slim.conv2d,), **conv_defaults), \
-        argscope((mpusim_separable_convolution2d,), **dw_defaults):
+        slim.arg_scope((slim.conv2d,), **conv_defaults):
             
         prev_depth = input_tensor.get_shape().as_list()[3]
     
@@ -246,6 +245,7 @@ def expanded_conv(input_tensor,
             padding = 'VALID'
       
         depthwise_func = functools.partial(depthwise_fn,
+                                            'depthwise_func',
                                             num_outputs=None,
                                             kernel_size=kernel_size,
                                             depth_multiplier=depthwise_channel_multiplier,

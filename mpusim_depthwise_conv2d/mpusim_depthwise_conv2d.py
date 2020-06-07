@@ -18,8 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import math
 
+import tensorflow.compat.v1 as tf
 from tensorflow.python.compat import compat
 from tensorflow.python.distribute import distribution_strategy_context as ds
 from tensorflow.python.framework import constant_op
@@ -64,34 +66,53 @@ def mpusim_depthwise_conv2d(input,
 
     rate = deprecated_argument_lookup("dilations", dilations, "rate", rate)
     
-    with ops.name_scope(name, "mpusim_depthwise_conv2d", [input, filter]) as name:
+    with ops.name_scope("mpusim_depthwise_conv2d", [input, filter]) as name:
         input = ops.convert_to_tensor(input, name="tensor_in")
         filter = ops.convert_to_tensor(filter, name="filter_in")
         
         if rate is None:
             rate = [1, 1]
             
-        channels = filter.dims[3]
+        channels = input.get_shape().with_rank(4).dims[3]
+        
+        #print('Depthwise convolution shape: {}'.format(filter.get_shape()))
 
         def op(input_converted, _, padding):
             
             inputs = tf.split(input_converted, channels, 3)
-            kernels = tf.split(depthwise_filter, channels, 3)
-            outputs = [mpu_sim_conv2d_lib.mpu_sim_conv2d(input_block,
-                                                            kernel_block,
-                                                            activations_datatype_size_byte,
-                                                            weights_datatype_size_byte,
-                                                            results_datatype_size_byte,
-                                                            systolic_array_height,
-                                                            systolic_array_width,
-                                                            activation_fifo_depth,
-                                                            accumulator_array_height,
-                                                            log_file_output_dir,
-                                                            model_name,
-                                                            strides=strides,
-                                                            padding=padding)
-                        for input_block, kernel_block in zip(inputs, kernels)]
-            return tf.concat(outputs, channel_axis)
+            kernels = tf.split(filter, channels, 2)
+                
+            outputs = []
+            convolution_count = 0
+                
+            for input_block, kernel_block in zip(inputs, kernels):
+                
+                with ops.name_scope("_{}".format(convolution_count)) as name:
+                
+                    channel_output = mpu_sim_conv2d_lib.mpu_sim_conv2d(input_block,
+                                                                        kernel_block,
+                                                                        activations_datatype_size_byte,
+                                                                        weights_datatype_size_byte,
+                                                                        results_datatype_size_byte,
+                                                                        systolic_array_height,
+                                                                        systolic_array_width,
+                                                                        activation_fifo_depth,
+                                                                        accumulator_array_height,
+                                                                        log_file_output_dir,
+                                                                        model_name,
+                                                                        strides=strides,
+                                                                        padding=padding)
+                
+                    outputs.append(channel_output)
+                
+                    #print(channel_output.get_shape())
+                
+                    convolution_count += 1
+            
+            #print('Executed depthwise convolution')
+            #sys.exit()
+            
+            return tf.concat(outputs, 3)
 
         return nn_ops.with_space_to_batch(input=input,
                                             filter_shape=array_ops.shape(filter),

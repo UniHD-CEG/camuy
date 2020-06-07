@@ -25,6 +25,8 @@ sys.path.append('../..')
 from mpusim_conv2d.mpusim_conv2d_gradient import *
 from mpusim_conv2d.mpusim_conv2d import *
 
+from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
+
 from mpusim_fc.mpusim_mat_mul_gradient import *
 from mpusim_fc.mpusim_fully_connected import *
 
@@ -104,10 +106,22 @@ class Model(ImageNetModel):
 
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
-        with argscope([mpusim_conv2d],
+        with argscope([mpusim_conv2d,
+                        mpusim_separable_convolution2d],
                         data_format=self.data_format,
-                        activation=tf.nn.relu,
-                        kernel_initializer=constant_init):
+                        activations_datatype_size_byte=self.activations_datatype_size_byte,
+                        weights_datatype_size_byte=self.weights_datatype_size_byte,
+                        results_datatype_size_byte=self.results_datatype_size_byte,
+                        systolic_array_height=self.systolic_array_height,
+                        systolic_array_width=self.systolic_array_width,
+                        activation_fifo_depth=8,
+                        accumulator_array_height=self.accumulator_array_height,
+                        log_file_output_dir=self.mpusim_logdir,
+                        model_name='mobilenet_v3_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
+                                                                                    self.systolic_array_width)), \
+                    argscope([mpusim_conv2d],
+                                activation=tf.nn.relu,
+                                kernel_initializer=constant_init):
                 
             
             l = mpusim_conv2d('Conv', image, 16,
@@ -137,29 +151,6 @@ class Model(ImageNetModel):
                                 bias_initializer=tf.compat.v1.zeros_initializer())
 
             return tf.squeeze(l, [1, 2])
-
-
-def get_data(name, batch):
-    isTrain = name == 'train'
-    if isTrain:
-        augmentors = [
-            imgaug.ResizeShortestEdge(256, cv2.INTER_CUBIC),
-            imgaug.RandomCrop(224),
-            imgaug.Lighting(0.1,
-                            eigval=np.asarray(
-                                [0.2175, 0.0188, 0.0045][::-1]) * 255.0,
-                            eigvec=np.array(
-                                [[-0.5675, 0.7192, 0.4009],
-                                 [-0.5808, -0.0045, -0.8140],
-                                 [-0.5836, -0.6948, 0.4203]],
-                                dtype='float32')[::-1, ::-1]),
-            imgaug.Flip(horiz=True)]
-    else:
-        augmentors = [
-            imgaug.ResizeShortestEdge(256, cv2.INTER_CUBIC),
-            imgaug.CenterCrop((224, 224))]
-    return get_imagenet_dataflow(args.data, name, batch, augmentors)
-
 
 def get_config(activations_datatype_size_byte,
                 weights_datatype_size_byte,
