@@ -44,6 +44,9 @@ from tensorflow.python.util.deprecation import deprecated_args
 from tensorflow.python.util.deprecation import deprecated_argument_lookup
 from tensorflow.python.util.tf_export import tf_export
 
+from tensorflow.python.keras.layers import subtract as tf_subtract
+from tensorflow.python.keras.backend import eval as keras_eval
+
 mpu_sim_conv2d_lib = tf.load_op_library('../../bin/build_mpusim_conv2d_release/mpusim-conv2d.so')
 
 def mpusim_depthwise_conv2d(input,
@@ -105,12 +108,7 @@ def mpusim_depthwise_conv2d(input,
                 
                     outputs.append(channel_output)
                 
-                    #print(channel_output.get_shape())
-                
                     convolution_count += 1
-            
-            #print('Executed depthwise convolution')
-            #sys.exit()
             
             return tf.concat(outputs, 3)
 

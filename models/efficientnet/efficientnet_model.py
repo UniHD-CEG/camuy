@@ -36,6 +36,13 @@ import tensorflow.compat.v1 as tf
 import utils
 from condconv import condconv_layers
 
+
+sys.path.append('../..')
+
+from mpusim_conv2d.mpusim_conv2d import *
+from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
+from mpusim_fc.mpusim_fully_connected import *
+
 GlobalParams = collections.namedtuple('GlobalParams', [
     'batch_norm_momentum', 'batch_norm_epsilon', 'dropout_rate', 'data_format',
     'num_classes', 'width_coefficient', 'depth_coefficient', 'depth_divisor',
@@ -189,8 +196,7 @@ class MBConvBlock(tf.keras.layers.Layer):
     self._data_format = global_params.data_format
     self._se_coefficient = global_params.se_coefficient
     if self._data_format == 'channels_first':
-      self._channel_axis = 1
-      self._spatial_dims = [2, 3]
+      raise ValueError('mpusim layers are not compatible with NCHW format')
     else:
       self._channel_axis = -1
       self._spatial_dims = [1, 2]
@@ -204,7 +210,7 @@ class MBConvBlock(tf.keras.layers.Layer):
 
     self.endpoints = None
 
-    self.conv_cls = tf.layers.Conv2D
+    self.conv_cls = mpusim_conv2d
     self.depthwise_conv_cls = utils.DepthwiseConv2D
     if self._block_args.condconv:
       self.conv_cls = functools.partial(
@@ -222,10 +228,10 @@ class MBConvBlock(tf.keras.layers.Layer):
   def _build(self):
     """Builds block according to the arguments."""
     if self._block_args.super_pixel == 1:
-      self._superpixel = tf.layers.Conv2D(
+      self._superpixel = mpusim_conv2d(
           self._block_args.input_filters,
-          kernel_size=[2, 2],
-          strides=[2, 2],
+          kernel_size=(2, 2),
+          strides=(2, 2),
           kernel_initializer=conv_kernel_initializer,
           padding='same',
           data_format=self._data_format,
@@ -556,6 +562,8 @@ class Model(tf.keras.Model):
         padding='same',
         data_format=self._global_params.data_format,
         use_bias=False)
+    
+    
     self._bn0 = self._batch_norm(
         axis=channel_axis,
         momentum=batch_norm_momentum,
