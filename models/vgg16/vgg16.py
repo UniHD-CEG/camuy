@@ -61,8 +61,7 @@ class Model(ImageNetModel):
 
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
-        with argscope(mpusim_conv2d, kernel_initializer=constant_init), \
-                argscope([mpusim_conv2d, MaxPooling, BatchNorm], data_format='NHWC'), \
+        with argscope([mpusim_conv2d, MaxPooling, BatchNorm], data_format='NHWC'), \
                 argscope([mpusim_conv2d, mpusim_fully_connected],
                                             kernel_initializer=constant_init,
                                             activations_datatype_size_byte=self.activations_datatype_size_byte, 

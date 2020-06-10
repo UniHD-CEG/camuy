@@ -27,7 +27,7 @@ from tensorflow.python.ops import gen_nn_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
 
-from tensorpack.compat import tfv1 as tf  # this should be avoided first in model code
+from tensorpack.compat import tfv1 as tf
 
 from tensorpack.tfutils.common import get_tf_version_tuple
 from tensorpack.utils.argtools import get_data_format, shape2d, shape4d, log_once

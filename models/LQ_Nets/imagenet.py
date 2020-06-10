@@ -56,7 +56,7 @@ class Model(ImageNetModel):
                     systolic_array_height=256,
                     systolic_array_width=256,
                     accumulator_array_height=4096,
-                    mpusim_logdir=''):
+                    mpusim_logdir='.'):
         super(Model, self).__init__('NHWC', 5e-5, 0.1, True, double_iter=False)
 
         self.mode=mode

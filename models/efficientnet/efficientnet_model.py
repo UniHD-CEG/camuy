@@ -296,7 +296,7 @@ class MBConvBlock(tf.keras.layers.Layer):
               self._block_args.input_filters * (self._block_args.se_ratio * (
                   self._se_coefficient if self._se_coefficient else 1))))
       # Squeeze and Excitation layer.
-      self._se_reduce = tf.layers.Conv2D(
+      self._se_reduce = mpusim_conv2d(
           num_reduced_filters,
           kernel_size=[1, 1],
           strides=[1, 1],
@@ -304,7 +304,7 @@ class MBConvBlock(tf.keras.layers.Layer):
           padding='same',
           data_format=self._data_format,
           use_bias=True)
-      self._se_expand = tf.layers.Conv2D(
+      self._se_expand = mpusim_conv2d(
           filters,
           kernel_size=[1, 1],
           strides=[1, 1],
@@ -443,7 +443,7 @@ class MBConvBlockWithoutDepthwise(MBConvBlock):
     filters = self._block_args.input_filters * self._block_args.expand_ratio
     if self._block_args.expand_ratio != 1:
       # Expansion phase:
-      self._expand_conv = tf.layers.Conv2D(
+      self._expand_conv = mpusim_conv2d(
           filters,
           kernel_size=[3, 3],
           strides=[1, 1],
@@ -457,7 +457,7 @@ class MBConvBlockWithoutDepthwise(MBConvBlock):
 
     # Output phase:
     filters = self._block_args.output_filters
-    self._project_conv = tf.layers.Conv2D(
+    self._project_conv = mpusim_conv2d(
         filters,
         kernel_size=[1, 1],
         strides=self._block_args.strides,

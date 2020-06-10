@@ -82,7 +82,7 @@ if __name__ == '__main__':
                                                 6*(systolic_data_setup_unit_load_count_total + \
                                                     weight_fetcher_load_count_total + \
                                                     accumulator_array_load_count_total)
-        utilization_df.loc[row, col] = zero_weight_multiplications_total #100.0*(1.0 - zero_weight_multiplications_total / \
+        utilization_df.loc[row, col] =  100.0*(1.0 - zero_weight_multiplications_total / \
                                                                 #(row*col*cycle_count_total))
 
         
