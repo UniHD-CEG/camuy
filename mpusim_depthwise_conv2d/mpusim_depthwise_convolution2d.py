@@ -50,6 +50,8 @@ from tensorpack.models.tflayer import convert_to_tflayer_args, rename_get_variab
 
 from .mpusim_depthwise_conv2d import mpusim_depthwise_conv2d
 
+__all__ = ['mpusim_depthwise_convolution2d']
+
 @layer_register(log_shape=True)
 def mpusim_depthwise_convolution2d(inputs,
                                     kernel_size,

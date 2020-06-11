@@ -8,11 +8,9 @@ import copy
 import functools
 import os
 import sys
-import cv2
+
 import tensorflow as tf
 from tensorflow.contrib import slim
-
-import conv_blocks
 
 from tensorpack import *
 from tensorpack.dataflow import imgaug
@@ -24,12 +22,12 @@ sys.path.append('../..')
 from mpusim_conv2d.mpusim_conv2d_gradient import *
 from mpusim_conv2d.mpusim_conv2d import *
 
-from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
-
-from mpusim_fc.mpusim_mat_mul_gradient import *
-from mpusim_fc.mpusim_fully_connected import *
+from mpusim_depthwise_conv2d.mpusim_depthwise_convolution2d import *
 
 from models.imagenet_utils import ImageNetModel, get_imagenet_dataflow
+
+from efficientnet_layers import *
+
 
 # Disable parallel op execution to ensure that
 # the MPU log outputs have the same order as
@@ -67,7 +65,7 @@ class Model(ImageNetModel):
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
         with argscope([mpusim_conv2d,
-                        mpusim_separable_convolution2d],
+                        mpusim_depthwise_convolution2d],
                         data_format=self.data_format,
                         activations_datatype_size_byte=self.activations_datatype_size_byte,
                         weights_datatype_size_byte=self.weights_datatype_size_byte,
@@ -78,10 +76,189 @@ class Model(ImageNetModel):
                         accumulator_array_height=self.accumulator_array_height,
                         log_file_output_dir=self.mpusim_logdir,
                         model_name='mobilenet_v3_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
-                                                                                    self.systolic_array_width)), \
-                    argscope([mpusim_conv2d],
-                                activation=tf.nn.relu,
-                                kernel_initializer=constant_init):
+                                                                                    self.systolic_array_width)):
+
+            # Stem
+            
+            l = mpusim_conv2d('stem'
+                                image,
+                                filters=32,
+                                kernel_size=[3, 3],
+                                strides=[2, 2],
+                                kernel_initializer=constant_init,
+                                padding='same',
+                                use_bias=False)
+            
+            l = tf.nn.swish(BatchNorm('bn0',
+                                        l,
+                                        axis=-1,
+                                        momentum=0.99,
+                                        epsilon=1e-3))
+            
+            # MBConv1
+            
+            l = mb_conv('MBConv1',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=1,
+                            input_filters=32,
+                            output_filters=16)
+            
+            # MBConv2
+            
+            l = mb_conv('MBConv2_1',
+                            l,
+                            kernel_size=3,
+                            strides=[2, 2],
+                            expand_ratio=6,
+                            input_filters=16,
+                            output_filters=24)
+            
+            l = mb_conv('MBConv2_2',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=24,
+                            output_filters=24)
+            
+            # MBConv3
+            
+            l = mb_conv('MBConv3_1',
+                            l,
+                            kernel_size=5,
+                            strides=[2, 2],
+                            expand_ratio=6,
+                            input_filters=24,
+                            output_filters=40)
+            
+            l = mb_conv('MBConv3_2',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=40,
+                            output_filters=40)
+            
+            # MBConv4
+            
+            l = mb_conv('MBConv4_1',
+                            l,
+                            kernel_size=3,
+                            strides=[2, 2],
+                            expand_ratio=6,
+                            input_filters=40,
+                            output_filters=80)
+            
+            l = mb_conv('MBConv4_2',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=80,
+                            output_filters=80)
+            
+            l = mb_conv('MBConv4_3',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=80,
+                            output_filters=80)
+            
+            # MBConv5
+            
+            l = mb_conv('MBConv5_1',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=80,
+                            output_filters=112)
+            
+            l = mb_conv('MBConv5_2',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=112,
+                            output_filters=112)
+            
+            l = mb_conv('MBConv5_3',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=112,
+                            output_filters=112)
+            
+            # MBConv6
+            
+            l = mb_conv('MBConv6_1',
+                            l,
+                            kernel_size=5,
+                            strides=[2, 2],
+                            expand_ratio=6,
+                            input_filters=112,
+                            output_filters=192)
+            
+            l = mb_conv('MBConv6_2',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=192,
+                            output_filters=192)
+            
+            l = mb_conv('MBConv6_3',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=192,
+                            output_filters=192)
+            
+            l = mb_conv('MBConv6_4',
+                            l,
+                            kernel_size=5,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=192,
+                            output_filters=192)
+            
+            # MBConv7
+            
+            l = mb_conv('MBConv7',
+                            l,
+                            kernel_size=3,
+                            strides=[1, 1],
+                            expand_ratio=6,
+                            input_filters=192,
+                            output_filters=320)
+            
+            # Head
+            
+            l = mpusim_conv2d('head',
+                                l,
+                                filters=1280,
+                                kernel_size=[1, 1],
+                                strides=[1, 1],
+                                kernel_initializer=constant_init,
+                                padding='same',
+                                use_bias=False)
+            
+            l = tf.nn.swish(BatchNorm('bn1',
+                                        l,
+                                        axis=-1,
+                                        momentum=0.99,
+                                        epsilon=1e-3))
+            
+            l = GlobalAvgPooling('avg_pool',
+                                    l,
+                                    data_format=self.data_format)
+            
+            return mpusim_fullyconnected('fc', l, 1000)
                 
 
 def get_config(activations_datatype_size_byte,
