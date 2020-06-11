@@ -27,11 +27,11 @@ from tensorpack.utils.gpu import get_num_gpu
 
 sys.path.append('../..')
 
-#from mpusim_conv2d.mpusim_conv2d_gradient import *
-#from mpusim_conv2d.mpusim_conv2d import *
+from mpusim_conv2d.mpusim_conv2d_gradient import *
+from mpusim_conv2d.mpusim_conv2d import *
 
-#from mpusim_fc.mpusim_mat_mul_gradient import *
-#from mpusim_fc.mpusim_fully_connected import *
+from mpusim_fc.mpusim_mat_mul_gradient import *
+from mpusim_fc.mpusim_fully_connected import *
 
 from models.imagenet_utils import ImageNetModel, get_imagenet_dataflow
 

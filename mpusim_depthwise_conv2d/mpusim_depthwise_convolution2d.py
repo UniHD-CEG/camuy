@@ -17,29 +17,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from tensorflow.python.eager import backprop
 from tensorflow.python.eager import context
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import backend
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.engine.base_layer import Layer
-from tensorflow.python.keras.engine.input_spec import InputSpec
-
-from tensorflow.python.keras.layers.pooling import AveragePooling1D
-from tensorflow.python.keras.layers.pooling import AveragePooling2D
-from tensorflow.python.keras.layers.pooling import AveragePooling3D
-from tensorflow.python.keras.layers.pooling import MaxPooling1D
-from tensorflow.python.keras.layers.pooling import MaxPooling2D
-from tensorflow.python.keras.layers.pooling import MaxPooling3D
-
-from tensorflow.python.keras.utils import conv_utils
-from tensorflow.python.keras.utils import tf_utils
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_util
 from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import nn
+from tensorflow.python.ops import gen_nn_ops
+from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
-from tensorflow.python.util.tf_export import keras_export
 
 from tensorpack.compat import tfv1 as tf
 
@@ -58,7 +48,7 @@ def mpusim_depthwise_convolution2d(inputs,
                                     strides=(1, 1),
                                     padding='valid',
                                     depth_multiplier=1,
-                                    data_format=None,
+                                    data_format='channels_last',
                                     activation=None,
                                     use_bias=True,
                                     depthwise_initializer='glorot_uniform',
@@ -77,27 +67,27 @@ def mpusim_depthwise_convolution2d(inputs,
                                     log_file_output_dir='.',
                                     model_name='unnamed'):
         
-    depthwise_initializer = initializers.get(depthwise_initializer)
-    depthwise_regularizer = regularizers.get(depthwise_regularizer)
-    depthwise_constraint = constraints.get(depthwise_constraint)
-    bias_initializer = initializers.get(bias_initializer)
+    #depthwise_initializer = initializers.get(depthwise_initializer)
+    #depthwise_regularizer = regularizers.get(depthwise_regularizer)
+    #depthwise_constraint = constraints.get(depthwise_constraint)
+    #bias_initializer = initializers.get(bias_initializer)
 
     data_format = get_data_format(data_format, keras_mode=False)
     input_shape = inputs.get_shape().as_list()
+    
+    strides = shape4d(strides, data_format=data_format)
 
     if len(input_shape) < 4:
         raise ValueError('Inputs to `mpusim_depthwise_conv2d` should have rank 4. '
                                         'Received input shape:', str(input_shape))
     
-    input_shape = tensor_shape.TensorShape(input_shape)
-    
-    if self.data_format == 'channels_first':
+    if data_format == 'NCHW':
         raise ValueError('mpusim_depthwise_convolution2d '
                             'only supports NHWC data format')
     else:
         channel_axis = 3
         
-    if input_shape.dims[channel_axis].value is None:
+    if input_shape[channel_axis] is None:
         raise ValueError('The channel dimension of the inputs to '
                                 '`mpusim_depthwise_convolution2d` '
                                 'should be defined. Found `None`.')
@@ -110,7 +100,7 @@ def mpusim_depthwise_convolution2d(inputs,
                                 depth_multiplier)
         
     depthwise_kernel = tf.get_variable('W', shape=depthwise_kernel_shape,
-                                        initializer=kernel_initializer,
+                                        initializer=depthwise_initializer,
                                         regularizer=depthwise_regularizer,
                                         constraint=depthwise_constraint)
 
@@ -131,8 +121,8 @@ def mpusim_depthwise_convolution2d(inputs,
                                     bias,
                                     data_format=data_format)
 
-    if self.activation is not None:
-        result = self.activation(result)
+    if activation is not None:
+        result = activation(result)
         
     result = tf.identity(result, name='output')
 

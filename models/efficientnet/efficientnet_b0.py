@@ -24,10 +24,12 @@ from mpusim_conv2d.mpusim_conv2d import *
 
 from mpusim_depthwise_conv2d.mpusim_depthwise_convolution2d import *
 
+from mpusim_fc.mpusim_mat_mul_gradient import *
+from mpusim_fc.mpusim_fully_connected import *
+
 from models.imagenet_utils import ImageNetModel, get_imagenet_dataflow
 
-from efficientnet_layers import *
-
+from mb_conv import *
 
 # Disable parallel op execution to ensure that
 # the MPU log outputs have the same order as
@@ -64,34 +66,38 @@ class Model(ImageNetModel):
 
     def get_logits(self, image):
         constant_init = tf.constant_initializer(1)
-        with argscope([mpusim_conv2d,
-                        mpusim_depthwise_convolution2d],
-                        data_format=self.data_format,
-                        activations_datatype_size_byte=self.activations_datatype_size_byte,
-                        weights_datatype_size_byte=self.weights_datatype_size_byte,
-                        results_datatype_size_byte=self.results_datatype_size_byte,
-                        systolic_array_height=self.systolic_array_height,
-                        systolic_array_width=self.systolic_array_width,
-                        activation_fifo_depth=8,
-                        accumulator_array_height=self.accumulator_array_height,
-                        log_file_output_dir=self.mpusim_logdir,
-                        model_name='mobilenet_v3_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
-                                                                                    self.systolic_array_width)):
+        with argscope([Conv2D,
+                            mpusim_conv2d,
+                            mpusim_depthwise_convolution2d],
+                            data_format=self.data_format), \
+                argscope([mpusim_conv2d,
+                            mpusim_depthwise_convolution2d,
+                            mpusim_fully_connected],
+                            activations_datatype_size_byte=self.activations_datatype_size_byte,
+                            weights_datatype_size_byte=self.weights_datatype_size_byte,
+                            results_datatype_size_byte=self.results_datatype_size_byte,
+                            systolic_array_height=self.systolic_array_height,
+                            systolic_array_width=self.systolic_array_width,
+                            activation_fifo_depth=8,
+                            accumulator_array_height=self.accumulator_array_height,
+                            log_file_output_dir=self.mpusim_logdir,
+                            model_name='mobilenet_v3_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
+                                                                                        self.systolic_array_width)):
 
             # Stem
             
-            l = mpusim_conv2d('stem'
+            l = mpusim_conv2d('stem',
                                 image,
                                 filters=32,
                                 kernel_size=[3, 3],
                                 strides=[2, 2],
                                 kernel_initializer=constant_init,
-                                padding='same',
+                                padding='SAME',
                                 use_bias=False)
             
             l = tf.nn.swish(BatchNorm('bn0',
                                         l,
-                                        axis=-1,
+                                        data_format=self.data_format,
                                         momentum=0.99,
                                         epsilon=1e-3))
             
@@ -245,12 +251,12 @@ class Model(ImageNetModel):
                                 kernel_size=[1, 1],
                                 strides=[1, 1],
                                 kernel_initializer=constant_init,
-                                padding='same',
+                                padding='SAME',
                                 use_bias=False)
             
             l = tf.nn.swish(BatchNorm('bn1',
                                         l,
-                                        axis=-1,
+                                        data_format=self.data_format,
                                         momentum=0.99,
                                         epsilon=1e-3))
             
@@ -258,7 +264,7 @@ class Model(ImageNetModel):
                                     l,
                                     data_format=self.data_format)
             
-            return mpusim_fullyconnected('fc', l, 1000)
+            return mpusim_fully_connected('fc', l, 1000)
                 
 
 def get_config(activations_datatype_size_byte,
@@ -269,7 +275,7 @@ def get_config(activations_datatype_size_byte,
                 accumulator_array_height,
                 mpusim_logdir):
     
-    nr_tower = max(get_num_gpu(), 1)
+    nr_tower = 1
     BASE_LR = 0.01 * (1. / 128.)
 
     logger.info("Running on {} towers. Batch size per tower: {}".format(nr_tower, 1))
