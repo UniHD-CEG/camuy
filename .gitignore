@@ -19,4 +19,4 @@ third_party/build_eigen3_release/
 *.nav
 *.snm
 CMakeLists.txt.user*
-
+**/mpu_log

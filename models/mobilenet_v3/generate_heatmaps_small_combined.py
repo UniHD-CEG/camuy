@@ -72,8 +72,8 @@ if __name__ == '__main__':
         systolic_data_setup_unit_load_count_total = sum(df.iloc[:, 20])
         weight_fetcher_load_count_total = sum(df.iloc[:, 21])
         accumulator_array_load_count_total = sum(df.iloc[:, 24])
-        cycle_count_total = sum(df.iloc[:, 27])
-        zero_weight_multiplications_total = sum(df.iloc[:, 29])
+        cycle_count_total = sum(df.iloc[:, 27].astype('float64'))
+        zero_weight_multiplications_total = sum(df.iloc[:, 29].astype('float64'))
         row, col = parse_file_name(log_file_name)
         accumulator_array_store_count_total = col*(cycle_count_total - row)
         data_movement_cost_df.loc[row, col] = intra_pe_data_movements_total + \
@@ -82,8 +82,8 @@ if __name__ == '__main__':
                                                 6*(systolic_data_setup_unit_load_count_total + \
                                                     weight_fetcher_load_count_total + \
                                                     accumulator_array_load_count_total)
-        utilization_df.loc[row, col] =  100.0*(1.0 - zero_weight_multiplications_total / \
-                                                                #(row*col*cycle_count_total))
+        utilization_df.loc[row, col] =  100.0*(1.0 - (zero_weight_multiplications_total / \
+                                                                (row*col*cycle_count_total)))
 
         
     data_movement_cost_sorted_np = data_movement_cost_df.sort_index(0).sort_index(1).fillna(1).astype('int64').to_numpy()

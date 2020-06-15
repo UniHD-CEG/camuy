@@ -9,6 +9,8 @@ import functools
 import os
 import sys
 
+os.environ["CUDA_VISIBLE_DEVICES"]=""
+
 import tensorflow as tf
 from tensorflow.contrib import slim
 
@@ -81,8 +83,8 @@ class Model(ImageNetModel):
                             activation_fifo_depth=8,
                             accumulator_array_height=self.accumulator_array_height,
                             log_file_output_dir=self.mpusim_logdir,
-                            model_name='mobilenet_v3_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
-                                                                                        self.systolic_array_width)):
+                            model_name='efficientnet_b0_sys_arr_h_{}_sys_arr_w_{}'.format(self.systolic_array_height,
+                                                                                            self.systolic_array_width)):
 
             # Stem
             
@@ -324,7 +326,7 @@ if __name__ == '__main__':
                             type=str, default='.')
     args = parser.parse_args()
     
-    logger.set_logger_dir(os.path.join('train_log', 'mobilenet_v3' + args.tensorpack_logdir_id))
+    logger.set_logger_dir(os.path.join('train_log', 'efficientnet_b0' + args.tensorpack_logdir_id))
     
     config = get_config(args.activations_datatype_size_byte,
                         args.weights_datatype_size_byte,
