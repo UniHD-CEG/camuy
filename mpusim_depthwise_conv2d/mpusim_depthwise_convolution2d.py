@@ -114,7 +114,16 @@ def mpusim_depthwise_convolution2d(inputs,
                                         depthwise_kernel,
                                         strides=strides,
                                         padding=padding,
-                                        data_format=data_format)
+                                        data_format=data_format,
+                                        activations_datatype_size_byte=activations_datatype_size_byte,
+                                        weights_datatype_size_byte=weights_datatype_size_byte,
+                                        results_datatype_size_byte=results_datatype_size_byte,
+                                        systolic_array_height=systolic_array_height,
+                                        systolic_array_width=systolic_array_width,
+                                        activation_fifo_depth=activation_fifo_depth,
+                                        accumulator_array_height=accumulator_array_height,
+                                        log_file_output_dir=log_file_output_dir,
+                                        model_name=model_name)
 
     if use_bias:
         result = tf.nn.bias_add(result,
