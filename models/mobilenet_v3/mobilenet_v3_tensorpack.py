@@ -25,7 +25,7 @@ sys.path.append('../..')
 from mpusim_conv2d.mpusim_conv2d_gradient import *
 from mpusim_conv2d.mpusim_conv2d import *
 
-from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
+from mpusim_separable_conv2d.mpusim_separable_convolution2d import *
 
 from mpusim_fc.mpusim_mat_mul_gradient import *
 from mpusim_fc.mpusim_fully_connected import *
