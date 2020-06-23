@@ -27,7 +27,7 @@ sys.path.append('../..')
 
 from mpusim_conv2d.mpusim_conv2d import *
 from mpusim_fc.mpusim_fully_connected import *
-from mpusim_separable_conv2d.mpusim_separable_conv2d_tensorpack import *
+from mpusim_separable_conv2d.mpusim_separable_convolution2d import *
 
 slim = contrib_slim
 

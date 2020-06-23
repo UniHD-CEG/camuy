@@ -131,7 +131,7 @@ public:
             const std::string opKernelStringSlashesReplacedWithUnderscores{
                                                             std::regex_replace(opKernelString,
                                                                                 slashRegex, "_")};
-                                                                                
+            
             MpuSimWrapper::getInstance().runMultiplication(
                                                     activationsDatatypeSizeByte,
                                                     weightsDatatypeSizeByte,
@@ -169,7 +169,7 @@ public:
             const std::string opKernelStringSlashesReplacedWithUnderscores{
                                                             std::regex_replace(opKernelString,
                                                                                 slashRegex, "_")};
-    
+                                                                                
             MpuSimWrapper::getInstance().runMultiplication(
                                                     activationsDatatypeSizeByte,
                                                     weightsDatatypeSizeByte,
@@ -317,7 +317,7 @@ public:
         const std::string opKernelStringSlashesReplacedWithUnderscores{
                                                         std::regex_replace(opKernelString,
                                                                             slashRegex, "_")};
-
+                                                                            
         MpuSimWrapper::getInstance().runMultiplication(
                                                 activationsDatatypeSizeByte,
                                                 weightsDatatypeSizeByte,

@@ -133,7 +133,7 @@ else\
                                                                 sizeKPadded)};\
     double activationMatrixMeanQuantized;\
     double activationMatrixStdDevQuantized;\
-    getMeanAndStdDevPadded(activationMatrix,\
+    getMeanAndStdDevPadded(activationMatrixQuantized,\
                             sizeM,\
                             sizeK,\
                             sizeM,\
