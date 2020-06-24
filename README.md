@@ -183,7 +183,7 @@ Adapted from [VGG-16 model](https://github.com/tensorpack/tensorpack/blob/master
 
 Adapted from the [GoogLeNet model](https://github.com/microsoft/LQ-Nets/blob/master/googlenet_model.py) in the [Microsoft LQ-Nets repository](https://github.com/microsoft/LQ-Nets).
 
-### [InceptionV2](models/inception_bn.py)
+### [InceptionV2](models/inception_bn/inception_bn.py)
 
 Adapted from the [BN-Inception model](https://github.com/tensorpack/tensorpack/blob/master/examples/ImageNetModels/inception-bn.py) from the [Tensorpack example library](https://github.com/tensorpack/tensorpack/tree/master/examples).
 
