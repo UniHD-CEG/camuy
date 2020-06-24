@@ -1,6 +1,5 @@
-# coding=utf-8
-# -*- coding: utf-8 -*-
 # Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+# Modifications copyright (c) 2020 Computing Systems Group.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +27,6 @@ from tf_slim.layers import utils
 from tf_slim.ops import variables
 from tf_slim.ops.arg_scope import add_arg_scope
 
-# pylint: disable=g-direct-tensorflow-import
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
