@@ -1,6 +1,7 @@
-# mpusim
+# CAMUY
 
-This project provides emulation of computation of convolutional and fully connected layers on weight stationary systolic arrays. It was developed as part of the master thesis "Efficient Design and Mapping of Deep Neural Networks onto Fixed Processing Units". The emulated architecture, based on the Google TPU v1, was named the Matrix Processing Unit, or MPU in short.
+Note: This project underwent a recent name change from "mpusim" to "CAMUY". All relevant file names and references will shortly be adjusted to reflect this change.  
+This project provides emulation of computation of convolutional and fully connected layers on weight stationary systolic arrays. It was initially developed as part of a master thesis and has been extended as part of the paper "On the Difficulty of Designing Processor Arrays for Deep Neural Networks". The emulated architecture, based on the Google TPU v1, was named the Configurable Accelerator Modeling for (workload) Understanding and AnalYsis, or CAMUY in short.
 
 ## Dependencies
 
@@ -22,14 +23,14 @@ The directory third_party/tensorflow_op_build_dependencies contains a number of 
 
 ## Compilation
 
-To build the submodules of the project, simply run the build script build.sh. The compiler used during main development was GCC 8.1. Because use of the \_\_restrict\_\_ directive is made, the code should also be able to be compiled using clang, but no testing has been done to confirm this.
+To build the submodules of the project, simply run the build script build.sh. The compiler used during main development was GCC 8.1. There are known issues when compiling with GCC 8.2. Because use of the \_\_restrict\_\_ directive is made, the code should also be able to be compiled using clang, but no testing has been done to confirm this. Successful building of this project using more recent GCC versions is also not guaranteed.
 After the submodules have been successfully build, you can run the mpu_simulator sanity check mpusim_test found in the directory bin/build_mpu_simulator_release, to check if the tool works as intended.
 
 ## Modules
 
 The project consists of the following four modules:
 
-### mpu_simulator
+### [mpu_simulator](mpu_simulator/)
 
 The actual library emulating matrix multiplication computation on weight stationary systolic arrays.
 The usage of the library itself without the wrapper and the TensorFlow/Tensorpack operators is described in the following. Beside the described functions, the library also allows for direct communication with the unified buffer, without the provided weight/activation/result matrix memory management.
@@ -75,10 +76,10 @@ matrixProcessingUnit.registerLogEntryAvailableCallback(
     mpuStatisticsLogger.addMpuStatisticsLogEntry(std::move(mpuStatisticsLogEntry));
 ```
 
-#### Store the weight/activation matrices to the emulated MPU unified buffer
+#### Store the weight/activation matrices to the emulated CAMUYr unified buffer
 
 Weight and activation matrices can be stored to the unified buffer in any order. While multiply weight matrices can reside in the emulated MPU unified buffer, only one activation matrix can be stored at any given time.
-Weight matrices are stored to the emulated unified buffer using the method `storeWeightMatrix()`. The function requires a string identifier, which will be used during multiplication to identify the the weight matrix to be used. The other parameters are a pointer to the matrix to be copied, and the height and width of the matrix. Input matrices are required to be of the same data type as the choses weight datatype used by the emulated MPU.
+Weight matrices are stored to the emulated unified buffer using the method `storeWeightMatrix()`. The function requires a string identifier, which will be used during multiplication to identify the the weight matrix to be used. The other parameters are a pointer to the matrix to be copied, and the height and width of the matrix. Input matrices are required to be of the same data type as the choses weight datatype used by the emulated CAMUY.
 Example:
 
 ```cpp
@@ -86,7 +87,7 @@ matrixProcessingUnit.storeWeightMatrix(weightMatrixNameString,
                                                 weightMatrixPtr,
                                                 height, width);
 ```
-The activation matrices are stored using the method `storeActivationMatrix()`. The method requires a pointer to the activation matrix to be copied, which has to be of the same datatype as the activation datatype used by the emulated MPU. The other two parameters are the height and width of the input activation matrix.
+The activation matrices are stored using the method `storeActivationMatrix()`. The method requires a pointer to the activation matrix to be copied, which has to be of the same datatype as the activation datatype used by the emulated CAMUY. The other two parameters are the height and width of the input activation matrix.
 Example:
 
 ```cpp
@@ -97,11 +98,11 @@ matrixProcessingUnit.storeActivationMatrix(actMatrixPtr,
 #### Run the matrix multiplication
 
 To multiplication process is started using the method `runMultiplication()`. This method requires the name of the weight matrix to be used in the multiplication as a parameter.
-Note: The MPU architecture in its current state can only process matrices where !((N > systolicArrayWidth) && (K <= systolicArrayHeight)).
+Note: The CAMUY architecture in its current state can only process matrices where !((N > systolicArrayWidth) && (K <= systolicArrayHeight)).
 
-#### Load the result matrix from the emulated MPU unified buffer
+#### Load the result matrix from the emulated CAMUY unified buffer
 
-After the matrix multiplication process has successfully finished, the result matrix can be retrieved from the emulated unified buffer using the method `loadResultMatrix()`. This method requires a pointer of the same datatype as used for the accumulator/result datatype of the emulated MPU, aswell as the number of elements to be loaded from the result matrix.
+After the matrix multiplication process has successfully finished, the result matrix can be retrieved from the emulated unified buffer using the method `loadResultMatrix()`. This method requires a pointer of the same datatype as used for the accumulator/result datatype of the emulated CAMUY, aswell as the number of elements to be loaded from the result matrix.
 Example:
 
 ```cpp
@@ -117,21 +118,21 @@ The iteration counts can be reset through the method `resetIterationCounts()`. T
 
 The Memory Management Unit can be reset by the method `resetMemoryManagementUnit()`. In dynamic allocation mode, the array emulating the unified buffer is freed, and the dope vectors of the stored matrices are deleted. In static allocation mode, this simply results in deletion of the corresponding dope vectors.
 
-### mpusim_wrapper
+### [mpusim_wrapper](mpusim_wrapper/)
 
 This library serves as a wrapper for the mpu_simulator library. It ensures that only a single instance of the model is active at any given point. It also ensures that the input matrices are padded for input sizes that are outside the limitations of the emulator. After every multiplication, the iteration count and execution metrics are reset.
 
-### mpusim_conv2d
+### [mpusim_conv2d](mpusim_conv2d/)
 
-This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc), that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py), which calls the custom TensorFlow conv2d operator in the background.
+This project contains the C++ implementation of a TensorFlow conv2d layer, based on the original TensorFlow Conv2DUsingGemmOp operator found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/conv_ops_using_gemm.cc), that uses the mpu_simulator through the mpusim_wrapper library for GEMM-based convolution computation. It also provides a Tensorpack 2d convolution operator based on the on the original Tensorpack Conv2d operator found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/conv2d.py), which invokes the custom TensorFlow conv2d operator in the background.
 
-### mpusim_fc
+### [mpusim_fc](mpusim_fc/)
 
-This project implements the C++ implementation of a Tensorflow matrix multiplication layer based on the TensorFlow operator MatMulOp, which can be found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc). This operator is then called by the custom TensorFlow operator MpuSimFc, based on the TensorFlow operator Dense found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/python/keras/layers/core.py). This operator in turn is called by the custom Tensorpack operator MpuSimFullyConnected, which is based on the Tensorpack operator FullyConnected found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/fc.py).
+This project implements the C++ implementation of a Tensorflow matrix multiplication layer based on the TensorFlow operator MatMulOp, which can be found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/core/kernels/matmul_op.cc). This operator is then called by the custom TensorFlow operator MpuSimFc, based on the TensorFlow operator Dense found [here](https://github.com/tensorflow/tensorflow/blob/r1.13/tensorflow/python/keras/layers/core.py). This operator in turn is called by the custom Tensorpack operator mpusim_fully_connected, which is based on the Tensorpack operator FullyConnected found [here](https://github.com/tensorpack/tensorpack/blob/master/tensorpack/models/fc.py).
 
 ## Usage of the custom Tensorpack operators
 
-The custom Tensorpack operators have some additional parameters compared to the standard Tensorpack operators which are used to control the MPU parameters and logging of execution metrics. These are described in the following list:
+The custom Tensorpack operators have some additional parameters compared to the standard Tensorpack operators which are used to control the CAMUY parameters and logging of execution metrics. These are described in the following list:
 
 | Parameter                         | Description                                       | Options               |
 | --------------------------------- | ------------------------------------------------- | --------------------- |
@@ -145,10 +146,10 @@ The custom Tensorpack operators have some additional parameters compared to the 
 | `log_file_output_dir`             | Directory to which the log file will be written   | Any valid directory   |
 | `model_name`                      | Name of the current model                         | Any valid filename    |
 
-While changing of the activation/weight/result datatype size, systolic array height/width, activation FIFO depth, and accumulator array height result in the destruction of the current MPU instance and construction of a new one with the specified parameters, changing the output log file directory and model name does not. This was deemed acceptable, as the output log file directory and name generally does not change for execution of a single model. The log file name and directory encountered in the first call to one of the custom Tensorpack operators decides the name and directory, until the mpusim_wrapper object is deleted upon completion of execution of the model script. By making use of the Tensorpack `argscope` context, the parameters can be selected for the whole model, for example:
+While changing of the activation/weight/result datatype size, systolic array height/width, activation FIFO depth, and accumulator array height result in the destruction of the current CAMUY instance and construction of a new one with the specified parameters, changing the output log file directory and model name does not. This was deemed acceptable, as the output log file directory and name generally does not change for execution of a single model. The log file name and directory encountered in the first call to one of the custom Tensorpack operators decides the name and directory, until the mpusim_wrapper object is deleted upon completion of execution of the model script. By making use of the Tensorpack `argscope` context, the parameters can be selected for the whole model, for example:
 
 ```python
-with argscope([MpuSimConv2D, MpuSimFullyConnected],
+with argscope([mpusim_conv2d, mpusim_fully_connected],
                         activations_datatype_size_byte=8, 
                         weights_datatype_size_byte=8,
                         results_datatype_size_byte=32,
@@ -159,8 +160,8 @@ with argscope([MpuSimConv2D, MpuSimFullyConnected],
                         log_file_output_dir=("log_file_directory"),
                         model_name='model_name'):
         
-    l = MpuSimConv2D('conv', image, filters=96, kernel_size=11, strides=4, padding='VALID')
-    l = MpuSimFullyConnected('fc', l, 1000)
+    l = mpusim_conv2d('conv', image, filters=96, kernel_size=11, strides=4, padding='VALID')
+    l = mpusim_fully_connected('fc', l, 1000)
 ```
 
 As seen in this example, using the `argscope` functionality, the custom Tensorpack operators can essentially function as drop in replacements for their default Tensorpack operator counterparts.
@@ -168,4 +169,40 @@ The resulting log file of the performed matrix multiplications in a model is wri
 
 ## Example models
 
-TODO: Add example model description
+The project contains the following models:
+
+### [AlexNet](models/alexnet/alexnet.py)
+
+Adapted from [AlexNet model](https://github.com/tensorpack/tensorpack/blob/master/examples/ImageNetModels/alexnet.py) from the [Tensorpack example library](https://github.com/tensorpack/tensorpack/tree/master/examples).
+
+### [VGG-16](models/vgg16/vgg16.py)
+
+Adapted from [VGG-16 model](https://github.com/tensorpack/tensorpack/blob/master/examples/ImageNetModels/vgg16.py) from the [Tensorpack example library](https://github.com/tensorpack/tensorpack/tree/master/examples).
+
+### [GoogLeNet](models/LQ_Nets/googlenet_model.py)
+
+Adapted from the [GoogLeNet model](https://github.com/microsoft/LQ-Nets/blob/master/googlenet_model.py) in the [Microsoft LQ-Nets repository](https://github.com/microsoft/LQ-Nets).
+
+### [InceptionV2](models/inception_bn.py)
+
+Adapted from the [BN-Inception model](https://github.com/tensorpack/tensorpack/blob/master/examples/ImageNetModels/inception-bn.py) from the [Tensorpack example library](https://github.com/tensorpack/tensorpack/tree/master/examples).
+
+### [ResNet](models/LQ_Nets/resnet_model.py)
+
+Adapted from the [ResNet model](https://github.com/microsoft/LQ-Nets/blob/master/resnet_model.py) in the [Microsoft LQ-Nets repository](https://github.com/microsoft/LQ-Nets).
+
+### [ResNeXt](models/resnext/resnext.py)
+
+Adapted from the [ResNet model](https://github.com/tensorpack/tensorpack/blob/master/examples/ResNet/imagenet-resnet.py) from the [Tensorpack example library](https://github.com/tensorpack/tensorpack/tree/master/examples).
+
+### [DenseNet](models/LQ_Nets/densenet_model.py)
+
+Adapted from the [ResNet model](https://github.com/microsoft/LQ-Nets/blob/master/densenet_model.py) in the [Microsoft LQ-Nets repository](https://github.com/microsoft/LQ-Nets).
+
+### [MobileNetV3](models/mobilenet_v3/mobilenet_v3.py)
+
+Adapted from the [MobileNetV3 model](https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet_v3.py) in the [TensorFlow-Slim image classification model library](https://github.com/tensorflow/models/tree/master/research/slim).
+
+### [EfficientNet-B0](models/efficientnet/efficientnet_b0.py)
+
+Adapted from [TensorFlow TPU model collection](https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet).
