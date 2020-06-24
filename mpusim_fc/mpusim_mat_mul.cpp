@@ -1,5 +1,5 @@
 /* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
- * Modifications copyright 2020 Kevin Stehle
+ * Modifications copyright (c) 2020 Computing Systems Group
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

@@ -1,5 +1,5 @@
 # Copyright Yuxin Wu
-# Modifications copyright 2020 Kevin Stehle
+# Modifications copyright (c) 2020 Computing Systems Group
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ class Model(ImageNetModel):
         with argscope([mpusim_conv2d, MaxPooling], data_format=self.data_format), \
                 argscope([mpusim_conv2d, mpusim_fully_connected],
                                             activation=tf.nn.relu,
-                                            kernel_initializer=constant_init activations_datatype_size_byte=self.activations_datatype_size_byte, 
+                                            kernel_initializer=constant_init, activations_datatype_size_byte=self.activations_datatype_size_byte, 
                                             weights_datatype_size_byte=self.weights_datatype_size_byte,
                                             results_datatype_size_byte=self.results_datatype_size_byte,
                                             systolic_array_height=self.systolic_array_height,
