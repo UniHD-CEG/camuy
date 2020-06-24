@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CAMUY
 
 Note: This project underwent a recent name change from "mpusim" to "CAMUY". All relevant file names and references will shortly be adjusted to reflect this change.  
@@ -206,3 +207,9 @@ Adapted from the [MobileNetV3 model](https://github.com/tensorflow/models/blob/m
 ### [EfficientNet-B0](models/efficientnet/efficientnet_b0.py)
 
 Adapted from [TensorFlow TPU model collection](https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet).
+=======
+# Camuy
+Fast evaluation of CNNs on configurable systolic arrays based on abstract metrics
+
+Code is currently being reviewed and will be provided soon (as of June 24, 2020).
+>>>>>>> 6f750f1a8091344cb3686feecde371b867952e00
