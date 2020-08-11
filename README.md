@@ -1,7 +1,7 @@
 # CAMUY
 
 Note: This project underwent a recent name change from "mpusim" to "CAMUY". All relevant file names and references will shortly be adjusted to reflect this change.  
-This project provides emulation of computation of convolutional and fully connected layers on weight stationary systolic arrays. It was initially developed as part of a master thesis and has been extended as part of the paper "On the Difficulty of Designing Processor Arrays for Deep Neural Networks". The emulated architecture, based on the Google TPU v1, was named the Configurable Accelerator Modeling for (workload) Understanding and AnalYsis, or CAMUY in short.
+This project provides emulation of computation of convolutional and fully connected layers on weight stationary systolic arrays. It was initially developed as part of a master thesis and has been extended as part of the paper "On the Difficulty of Designing Processor Arrays for Deep Neural Networks", which can be found [here](https://arxiv.org/pdf/2006.14008.pdf). The emulated architecture, based on the Google TPU v1, was named the Configurable Accelerator Modeling for (workload) Understanding and AnalYsis, or CAMUY in short.
 
 ## Dependencies
 
